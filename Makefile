@@ -8,8 +8,8 @@ TOP ?= soc
 # Get the root directory
 ROOT_DIR = $(shell echo $(realpath .))
 
-# Default goal is to clean
-.DEFAULT_GOAL := clean
+# Default goal is to help
+.DEFAULT_GOAL := help
 
 # Define XVLOG_DEFS
 XVLOG_DEFS += -d SIMULATION
@@ -143,6 +143,19 @@ FLIST += ${ROOT_DIR}/source/soc.sv
 ####################################################################################################
 # TARGETS
 ####################################################################################################
+
+# Help target: displays help message
+.PHONY: help
+help:
+	@echo -e "\033[1;36mAvailable targets:\033[0m"
+	@echo -e "\033[1;33m  clean          \033[0m- Removes build directory and rebuilds it"
+	@echo -e "\033[1;33m  clean_full     \033[0m- Cleans both build and log directories"
+	@echo -e "\033[1;33m  simulate       \033[0m- Compiles and simulates the design"
+	@echo -e "\033[1;33m  simulate_gui   \033[0m- Compiles and simulates the design with GUI"
+	@echo -e "\033[1;33m  run            \033[0m- Cleans and runs simulation"
+	@echo -e "\033[1;33m  run_gui        \033[0m- Cleans and runs simulation with GUI"
+	@echo -e "\033[1;36mVariables:\033[0m"
+	@echo -e "\033[1;33m  TOP            \033[0m- Specifies the top module to be used (default: soc)"
 
 # Build target: creates build directory and adds it to gitignore
 build:
