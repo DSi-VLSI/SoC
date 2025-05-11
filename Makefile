@@ -13,6 +13,8 @@ ROOT_DIR = $(shell echo $(realpath .))
 
 # Define XVLOG_DEFS
 XVLOG_DEFS += -d SIMULATION
+XVLOG_DEFS += -d VERILATOR
+XVLOG_DEFS += -d XSIM
 
 # Define a command to grep for WARNING and ERROR messages with color highlighting
 GREP_EW := grep -E "WARNING:|ERROR:|" --color=auto
@@ -152,10 +154,10 @@ help:
 	@echo -e "\033[1;33m  clean_full     \033[0m- Cleans both build and log directories"
 	@echo -e "\033[1;33m  simulate       \033[0m- Compiles and simulates the design"
 	@echo -e "\033[1;33m  simulate_gui   \033[0m- Compiles and simulates the design with GUI"
-	@echo -e "\033[1;33m  run            \033[0m- Cleans and runs simulation"
-	@echo -e "\033[1;33m  run_gui        \033[0m- Cleans and runs simulation with GUI"
+	@echo -e "\033[1;33m  test           \033[0m- Compiles and prepares a test program for simulation"
 	@echo -e "\033[1;36mVariables:\033[0m"
 	@echo -e "\033[1;33m  TOP            \033[0m- Specifies the top module to be used (default: soc)"
+	@echo -e "\033[1;33m  TEST           \033[0m- Specifies the test program to compile (required for 'test' target)"
 
 # Build target: creates build directory and adds it to gitignore
 build:
@@ -204,25 +206,34 @@ build/build_$(TOP): source/$(TOP).sv build
 	@echo "" > build/build_$(TOP)
 
 .PHONY: simulate
-simulate: build/build_$(TOP)
+simulate: build/build_$(TOP) test_check
 	@echo "--testplusarg TESTNAME=$(TESTNAME)" > build/xsim_args
 	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(TOP)_$(TESTNAME).txt
 
 .PHONY: simulate_gui
-simulate_gui: build/build_$(TOP)
+simulate_gui: build/build_$(TOP) test_check
 	@echo "--testplusarg TESTNAME=$(TESTNAME)" > build/xsim_args
 	@cd build; xsim $(TOP) -f xsim_args -gui
 
-.PHONY: run
-run: clean simulate
-
-.PHONY: run_gui
-run_gui: clean simulate_gui
-
 .PHONY: print_logo
 print_logo:
-	@echo -e "\033[1;36m  ___  ___ _        ___       ___  \033[0m"
-	@echo -e "\033[1;36m |   \/ __(_)  __  / __| ___ / __| \033[0m"
-	@echo -e "\033[1;36m | |) \__ \ | |__| \__ \/ _ \ (__  \033[0m"
-	@echo -e "\033[1;36m |___/|___/_|      |___/\___/\___| \033[0m"
-	@echo -e "\033[1;36m                                   \033[0m"
+	@echo ""
+
+# Define the GCC command for RISC-V
+RV64G_GCC := riscv64-unknown-elf-gcc -march=rv32imf -mabi=ilp32f -nostdlib -nostartfiles
+
+.PHONY: test_check
+test_check:
+	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
+
+.PHONY: test
+test: build
+	@if [ -z ${TEST} ]; then echo -e "\033[1;31mTEST is not set\033[0m"; exit 1; fi
+	@if [ ! -f tests/$(TEST) ]; then echo -e "\033[1;31mtests/$(TEST) does not exist\033[0m"; exit 1; fi
+	@$(eval TEST_TYPE := $(shell echo "$(TEST)" | sed "s/.*\.//g"))
+	@if [ "$(TEST_TYPE)" = "c" ]; then TEST_ARGS="lib/startup.s"; else TEST_ARGS=""; fi; \
+		$(RV64G_GCC) -o build/prog.elf tests/$(TEST) $$TEST_ARGS -Ilib
+	@riscv64-unknown-elf-objcopy -O verilog build/prog.elf build/prog.hex
+	@riscv64-unknown-elf-nm build/prog.elf > build/prog.sym
+	@riscv64-unknown-elf-objdump -d build/prog.elf > build/prog.dump
+
