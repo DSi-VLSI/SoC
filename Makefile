@@ -17,7 +17,7 @@ XVLOG_DEFS += -d SIMULATION
 # Define a command to grep for WARNING and ERROR messages with color highlighting
 GREP_EW := grep -E "WARNING:|ERROR:|" --color=auto
 
-TESTNAME?=default
+TEST?=default
 
 ####################################################################################################
 # FILE LISTS
@@ -88,6 +88,7 @@ define compile
 endef
 
 build/build_$(TOP): source/$(TOP).sv build
+ifeq ($(wildcard build/build_$(TOP)),)
 	@make -s clean
 	@echo -e "\033[3;35mCompiling...\033[0m"
 	@$(eval COMPILE_LIB := $(FLIST))
@@ -97,15 +98,20 @@ build/build_$(TOP): source/$(TOP).sv build
 	@cd build; xelab $(TOP) --O0 --incr --nolog --timescale 1ns/1ps --debug wave | $(GREP_EW)
 	@echo -e "\033[3;35mElaborated $(TOP)\033[0m"
 	@echo "" > build/build_$(TOP)
+else
+	@echo -e "\033[3;35m$(TOP) build already exists. Skipping build.\033[0m"
+endif
 
 .PHONY: simulate
-simulate: build/build_$(TOP) test_check
-	@echo "--testplusarg TESTNAME=$(TESTNAME)" > build/xsim_args
-	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(TOP)_$(TESTNAME).txt
+simulate: build/build_$(TOP)
+	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
+	@echo "--testplusarg TEST=$(TEST)" > build/xsim_args
+	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(TOP)_$(TEST).txt
 
 .PHONY: simulate_gui
-simulate_gui: build/build_$(TOP) test_check
-	@echo "--testplusarg TESTNAME=$(TESTNAME)" > build/xsim_args
+simulate_gui: build/build_$(TOP)
+	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
+	@echo "--testplusarg TEST=$(TEST)" > build/xsim_args
 	@cd build; xsim $(TOP) -f xsim_args -gui
 
 .PHONY: print_logo
@@ -114,10 +120,6 @@ print_logo:
 
 # Define the GCC command for RISC-V
 RV64G_GCC := riscv64-unknown-elf-gcc -march=rv64g -nostdlib -nostartfiles
-
-.PHONY: test_check
-test_check:
-	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
 
 .PHONY: test
 test: build

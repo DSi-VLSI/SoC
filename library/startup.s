@@ -220,17 +220,18 @@
 
 .section .data
 
-.align 2
+.align 4
 .globl tohost
 tohost: .dword 0xFFFFFFFFFFFFFFFF
 
-.align 2
+.align 4
 .globl putchar_stdout
 putchar_stdout: .dword 0
 
 .section .text
 .globl _start
 _start:
+    # csrc MCOUNTINHIBIT, 1
     call main
 
 _exit:

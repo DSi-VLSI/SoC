@@ -97,6 +97,7 @@ module ariane_tb;
     $fclose(file);
   endfunction
 
+  // Task to apply reset to the DUT
   task static apply_reset();
     #100ns;
     clk       <= '0;
@@ -111,6 +112,7 @@ module ariane_tb;
     #100ns;
   endtask
 
+  // Task to start the clock signal
   task static start_clock();
     fork
       forever begin
@@ -122,12 +124,35 @@ module ariane_tb;
     join_none
   endtask
 
+  // Task to monitor and print characters written to the simulated STDOUT
+  task static monitor_prints();
+    string prints;
+    prints = "";
+    fork
+      forever begin
+        @(posedge clk);
+        if (u_axi_ram.addr_out == sym["putchar_stdout"] && u_axi_ram.mem_strb[0] == '1 && u_axi_ram.mem_we == '1 && u_axi_ram.mem_req == '1) begin
+          if (u_axi_ram.mem_wdata[0] == "\n") begin
+            $display("\033[1;33mSTDOUT         : %s\033[0m [%0t]", prints, $realtime);
+            prints = "";
+          end else begin
+            $sformat(prints, "%s%c", prints, u_axi_ram.mem_wdata[0]);
+          end
+        end
+      end
+    join_none
+  endtask
+
+  // Task to wait for the test to exit and check the exit code
   task static wait_exit();
     longint exit_code;
-    do begin
-      repeat (10) @(posedge clk);
-      exit_code = u_axi_ram.read_mem_d(sym["tohost"]);
-    end while (exit_code == -1);
+    forever begin
+      @(posedge clk);
+      if (u_axi_ram.addr_out == sym["tohost"] && u_axi_ram.mem_strb == '1 && u_axi_ram.mem_we == '1 && u_axi_ram.mem_req == '1) begin
+        exit_code = u_axi_ram.mem_wdata;
+        break;
+      end
+    end
     $display("\033[0;35mEXIT CODE      : 0x%08x\033[0m", exit_code);
     if (exit_code == 0) $display("\033[1;32m************** TEST PASSED **************\033[0m");
     else $display("\033[1;31m************** TEST FAILED **************\033[0m");
@@ -157,6 +182,9 @@ module ariane_tb;
     $display("\033[0;35mTOHOSTADDR     : 0x%08x\033[0m", sym["tohost"]);
     $display("\033[0;35mPUTCHAR_STDOUT : 0x%08x\033[0m", sym["putchar_stdout"]);
 
+    // Monitor STDOUT prints
+    monitor_prints();
+
     // Apply reset and start clock
     apply_reset();
     start_clock();
@@ -170,7 +198,7 @@ module ariane_tb;
   end
 
   initial begin
-    #1ms;
+    #25ms;
     $fatal(1, "Simulation timeout after 1ms");
   end
 

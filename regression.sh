@@ -30,6 +30,73 @@ echo -e "\033[1;32mDone!\033[0m ($time_diff seconds)"
 # SIMULATE
 ################################################################################
 
+ci_simulate ariane_tb add.s
+ci_simulate ariane_tb addi.s
+ci_simulate ariane_tb and.s
+ci_simulate ariane_tb andi.s
+ci_simulate ariane_tb auipc.s
+ci_simulate ariane_tb beq.s
+ci_simulate ariane_tb bge.s
+ci_simulate ariane_tb bgeu.s
+ci_simulate ariane_tb blt.s
+ci_simulate ariane_tb bltu.s
+ci_simulate ariane_tb bne.s
+ci_simulate ariane_tb ebreak.s
+ci_simulate ariane_tb ecall.s
+ci_simulate ariane_tb fence.s
+ci_simulate ariane_tb illegal_instr.s
+ci_simulate ariane_tb intr_handler.s
+ci_simulate ariane_tb jal.s
+ci_simulate ariane_tb jalr.s
+ci_simulate ariane_tb lb.s
+ci_simulate ariane_tb lbu.s
+ci_simulate ariane_tb lh.s
+ci_simulate ariane_tb lhu.s
+ci_simulate ariane_tb lui.s
+ci_simulate ariane_tb lw.s
+ci_simulate ariane_tb or.s
+ci_simulate ariane_tb ori.s
+ci_simulate ariane_tb sb.s
+ci_simulate ariane_tb sh.s
+ci_simulate ariane_tb sll.s
+ci_simulate ariane_tb slli.s
+ci_simulate ariane_tb slt.s
+ci_simulate ariane_tb slti.s
+ci_simulate ariane_tb sltiu.s
+ci_simulate ariane_tb sltu.s
+ci_simulate ariane_tb sra.s
+ci_simulate ariane_tb srai.s
+ci_simulate ariane_tb srl.s
+ci_simulate ariane_tb srli.s
+ci_simulate ariane_tb sub.s
+ci_simulate ariane_tb sw.s
+ci_simulate ariane_tb xor.s
+ci_simulate ariane_tb xori.s
+ci_simulate ariane_tb array.c
+ci_simulate ariane_tb array_of_pointers.c
+ci_simulate ariane_tb bitwise.c
+ci_simulate ariane_tb conditional.c
+ci_simulate ariane_tb const.c
+ci_simulate ariane_tb dynamic_memory.c
+ci_simulate ariane_tb enum.c
+ci_simulate ariane_tb file_io.c
+ci_simulate ariane_tb float.c
+ci_simulate ariane_tb function_pointer.c
+ci_simulate ariane_tb function_returning_pointer.c
+ci_simulate ariane_tb loop.c
+ci_simulate ariane_tb macro.c
+ci_simulate ariane_tb math.c
+ci_simulate ariane_tb pointer.c
+ci_simulate ariane_tb pointer_arithmetic.c
+ci_simulate ariane_tb printf.c
+ci_simulate ariane_tb recursion.c
+ci_simulate ariane_tb scanf.c
+ci_simulate ariane_tb string.c
+ci_simulate ariane_tb struct.c
+ci_simulate ariane_tb typedef.c
+ci_simulate ariane_tb union.c
+ci_simulate ariane_tb volatile.c
+
 ci_simulate soc default # REMOVE LATER
 
 ################################################################################
