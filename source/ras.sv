@@ -16,17 +16,16 @@ module ras #(
     always_comb begin
         stack_d = stack_q;
 
-        // push on the stack
         if (push_i) begin
             stack_d[0].ra = data_i;
-            // mark the new return address as valid
+
             stack_d[0].valid = 1'b1;
             stack_d[DEPTH-1:1] = stack_q[DEPTH-2:0];
         end
 
         if (pop_i) begin
             stack_d[DEPTH-2:0] = stack_q[DEPTH-1:1];
-            // we popped the value so invalidate the end of the stack
+
             stack_d[DEPTH-1].valid = 1'b0;
             stack_d[DEPTH-1].ra = 'b0;
         end

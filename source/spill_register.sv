@@ -1,6 +1,6 @@
 module spill_register #(
   parameter type T      = logic,
-  parameter bit  Bypass = 1'b0     // make this spill register transparent
+  parameter bit  Bypass = 1'b0     
 ) (
   input  logic clk_i   ,
   input  logic rst_ni  ,

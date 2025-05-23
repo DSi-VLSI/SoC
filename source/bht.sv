@@ -10,9 +10,9 @@ module bht #(
     input  ariane_pkg::bht_update_t     bht_update_i,
     output ariane_pkg::bht_prediction_t bht_prediction_o
 );
-    localparam OFFSET = 2; // we are using compressed instructions so do not use the lower 2 bits for prediction
+    localparam OFFSET = 2; 
     localparam ANTIALIAS_BITS = 8;
-    // number of bits we should use for prediction
+
     localparam PREDICTION_BITS = $clog2(NR_ENTRIES) + OFFSET;
 
     struct packed {
@@ -25,7 +25,7 @@ module bht #(
 
     assign index     = vpc_i[PREDICTION_BITS - 1:OFFSET];
     assign update_pc = bht_update_i.pc[PREDICTION_BITS - 1:OFFSET];
-    // prediction assignment
+
     assign bht_prediction_o.valid = bht_q[index].valid;
     assign bht_prediction_o.taken = bht_q[index].saturation_counter == 2'b10;
     assign bht_prediction_o.strongly_taken = (bht_q[index].saturation_counter == 2'b11);
@@ -37,15 +37,15 @@ module bht #(
             bht_d[update_pc].valid = 1'b1;
 
             if (saturation_counter == 2'b11) begin
-                // we can safely decrease it
+
                 if (~bht_update_i.taken)
                     bht_d[update_pc].saturation_counter = saturation_counter - 1;
-            // then check if it saturated in the negative regime e.g.: branch not taken
+
             end else if (saturation_counter == 2'b00) begin
-                // we can safely increase it
+
                 if (bht_update_i.taken)
                     bht_d[update_pc].saturation_counter = saturation_counter + 1;
-            end else begin // otherwise we are not in any boundaries and can decrease or increase it
+            end else begin 
                 if (bht_update_i.taken)
                     bht_d[update_pc].saturation_counter = saturation_counter + 1;
                 else
@@ -59,7 +59,7 @@ module bht #(
             for (int unsigned i = 0; i < NR_ENTRIES; i++)
                 bht_q[i] <= '0;
         end else begin
-            // evict all entries
+
             if (flush_i) begin
                 for (int i = 0; i < NR_ENTRIES; i++) begin
                     bht_q[i].valid <=  1'b0;

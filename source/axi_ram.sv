@@ -1,11 +1,11 @@
 `include "axi/typedef.svh"
-`include "axi/assign.svh"
 
 module axi_ram #(
-    parameter logic [63:0] MEM_BASE = 'h1000,
-    parameter int          MEM_SIZE = 18,
-    parameter type         req_t    = soc_pkg::s_req_t,
-    parameter type         resp_t   = soc_pkg::s_resp_t
+    parameter logic [63:0] MEM_BASE     = 'h1000,
+    parameter int          MEM_SIZE     = 18,
+    parameter bit          ALLOW_WRITES = 1,
+    parameter type         req_t        = soc_pkg::s_req_t,
+    parameter type         resp_t       = soc_pkg::s_resp_t
 ) (
     input  logic  clk_i,
     input  logic  arst_ni,
@@ -14,172 +14,167 @@ module axi_ram #(
 );
 
   localparam int IW = $bits(req_i.aw.id);
-  localparam int AW = MEM_SIZE;
+  localparam int AW = $bits(req_i.aw.addr);
   localparam int DW = $bits(req_i.w.data);
-  localparam int UW = $bits(resp_o.r.user);
+  localparam int UW = $bits(req_i.aw.user);
+  localparam int NumBanks = 1;
+  localparam int EffectiveAddrWidth = MEM_SIZE - $clog2(DW / 8);
 
-  `AXI_TYPEDEF_ALL(axi, logic [AW-1:0], logic [IW-1:0], logic [DW-1:0], logic [DW/8-1:0],
-                   logic [UW-1:0])
-  `AXI_LITE_TYPEDEF_ALL(axil, logic [AW-1:0], logic [DW-1:0], logic [DW/8-1:0])
+  `AXI_TYPEDEF_ALL(axi, logic[AW-1:0], logic[IW-1:0], logic[DW-1:0], logic[DW/8-1:0], logic[UW-1:0])
 
-  axi_req_t   axi_req;
-  axi_resp_t  axi_resp;
-  axil_req_t  axil_req_pre_mem;
-  axil_resp_t axil_resp_pre_mem;
-  axil_req_t  axil_req;
-  axil_resp_t axil_resp;
+  logic  [      AW-1:0]      addr_out;
+  logic  [      AW-1:0]      addr_tmp;
 
-  assign axi_req.aw.id     = req_i.aw.id;
-  assign axi_req.aw.addr   = (req_i.aw.addr - MEM_BASE);
-  assign axi_req.aw.len    = req_i.aw.len;
-  assign axi_req.aw.size   = req_i.aw.size;
-  assign axi_req.aw.burst  = req_i.aw.burst;
-  assign axi_req.aw.lock   = req_i.aw.lock;
-  assign axi_req.aw.cache  = req_i.aw.cache;
-  assign axi_req.aw.prot   = req_i.aw.prot;
-  assign axi_req.aw.qos    = req_i.aw.qos;
-  assign axi_req.aw.region = req_i.aw.region;
-  assign axi_req.aw.atop   = req_i.aw.atop;
-  assign axi_req.aw.user   = req_i.aw.user;
-  assign axi_req.aw_valid  = req_i.aw_valid;
-  assign resp_o.aw_ready   = axi_resp.aw_ready;
-  assign axi_req.w.data    = req_i.w.data;
-  assign axi_req.w.strb    = req_i.w.strb;
-  assign axi_req.w.last    = req_i.w.last;
-  assign axi_req.w.user    = req_i.w.user;
-  assign axi_req.w_valid   = req_i.w_valid;
-  assign resp_o.w_ready    = axi_resp.w_ready;
-  assign resp_o.b.id       = axi_resp.b.id;
-  assign resp_o.b.resp     = axi_resp.b.resp;
-  assign resp_o.b.user     = axi_resp.b.user;
-  assign resp_o.b_valid    = axi_resp.b_valid;
-  assign axi_req.b_ready   = req_i.b_ready;
-  assign axi_req.ar.id     = req_i.ar.id;
-  assign axi_req.ar.addr   = (req_i.ar.addr - MEM_BASE);
-  assign axi_req.ar.len    = req_i.ar.len;
-  assign axi_req.ar.size   = req_i.ar.size;
-  assign axi_req.ar.burst  = req_i.ar.burst;
-  assign axi_req.ar.lock   = req_i.ar.lock;
-  assign axi_req.ar.cache  = req_i.ar.cache;
-  assign axi_req.ar.prot   = req_i.ar.prot;
-  assign axi_req.ar.qos    = req_i.ar.qos;
-  assign axi_req.ar.region = req_i.ar.region;
-  assign axi_req.ar.user   = req_i.ar.user;
-  assign axi_req.ar_valid  = req_i.ar_valid;
-  assign resp_o.ar_ready   = axi_resp.ar_ready;
-  assign resp_o.r.id       = axi_resp.r.id;
-  assign resp_o.r.data     = axi_resp.r.data;
-  assign resp_o.r.resp     = axi_resp.r.resp;
-  assign resp_o.r.last     = axi_resp.r.last;
-  assign resp_o.r.user     = axi_resp.r.user;
-  assign resp_o.r_valid    = axi_resp.r_valid;
-  assign axi_req.r_ready   = req_i.r_ready;
+  logic                      mem_req;
+  logic  [MEM_SIZE-1:0]      mem_addr;
+  logic  [    DW/8-1:0][7:0] mem_wdata;
+  logic  [    DW/8-1:0]      mem_strb;
+  logic                      mem_rvalid;
+  logic  [    DW/8-1:0][7:0] mem_rdata;
+  logic  [    DW/8-1:0][7:0] tmp_rdata;
+  logic                      mem_we;
 
-  axi_to_axi_lite #(
-      .AxiAddrWidth   (AW),
-      .AxiDataWidth   (DW),
-      .AxiIdWidth     (IW),
-      .AxiUserWidth   (UW),
-      .AxiMaxWriteTxns(4),
-      .AxiMaxReadTxns (4),
-      .FullBW         (0),
-      .FallThrough    (0),
-      .full_req_t     (axi_req_t),
-      .full_resp_t    (axi_resp_t),
-      .lite_req_t     (axil_req_t),
-      .lite_resp_t    (axil_resp_t)
-  ) u_converter (
+  logic  [    DW/8-1:0][7:0] rdata_q    [$];
+
+  bit    [         7:0]      mem        [longint];
+
+  req_t                      fifo_req;
+  resp_t                     fifo_resp;
+  resp_t                     final_resp;
+
+  always_comb begin
+    addr_tmp = addr_out - MEM_BASE;
+    mem_addr[MEM_SIZE-1:$clog2(DW/8)] = addr_tmp[MEM_SIZE-1:$clog2(DW/8)];
+    mem_addr[$clog2(DW/8)-1:0] = '0;
+  end
+
+  always @(posedge clk_i or negedge arst_ni) begin
+    if (~arst_ni) begin
+      rdata_q.delete();
+      mem_rvalid <= '0;
+    end else begin
+      if (rdata_q.size()) begin
+        mem_rvalid <= '1;
+        mem_rdata  <= rdata_q.pop_front();
+      end else begin
+        mem_rvalid <= '0;
+      end
+      foreach (tmp_rdata[i]) begin
+        tmp_rdata[i] = mem[mem_addr+i];
+      end
+      if (mem_req) begin
+        rdata_q.push_back(tmp_rdata);
+        foreach (mem_strb[i]) begin
+          if (mem_strb[i] & mem_we & ALLOW_WRITES) begin
+            mem[mem_addr+i] = mem_wdata[i];
+          end
+        end
+      end
+    end
+  end
+
+  always_comb begin
+    resp_o = final_resp;
+    if (ALLOW_WRITES == 0) resp_o.b.resp = 2;
+  end
+
+  axi_fifo #(
+      .Depth      (32'd4),
+      .FallThrough(1'b0),
+      .aw_chan_t  (axi_aw_chan_t),
+      .w_chan_t   (axi_w_chan_t),
+      .b_chan_t   (axi_b_chan_t),
+      .ar_chan_t  (axi_ar_chan_t),
+      .r_chan_t   (axi_r_chan_t),
+      .axi_req_t  (req_t),
+      .axi_resp_t (resp_t)
+  ) u_fifo (
       .clk_i     (clk_i),
       .rst_ni    (arst_ni),
       .test_i    ('0),
-      .slv_req_i (axi_req),
-      .slv_resp_o(axi_resp),
-      .mst_req_o (axil_req_pre_mem),
-      .mst_resp_i(axil_resp_pre_mem)
+      .slv_req_i (req_i),
+      .slv_resp_o(final_resp),
+      .mst_req_o (fifo_req),
+      .mst_resp_i(fifo_resp)
   );
 
-  axi_fifo #(
-      .Depth      (32'd1),
-      .FallThrough(1'b0),
-      .aw_chan_t  (axil_aw_chan_t),
-      .w_chan_t   (axil_w_chan_t),
-      .b_chan_t   (axil_b_chan_t),
-      .ar_chan_t  (axil_ar_chan_t),
-      .r_chan_t   (axil_r_chan_t),
-      .axi_req_t  (axil_req_t),
-      .axi_resp_t (axil_resp_t)
-  ) u_fifo (
-      .clk_i(clk_i),
-      .rst_ni(arst_ni),
-      .test_i('0),
-      .slv_req_i(axil_req_pre_mem),
-      .slv_resp_o(axil_resp_pre_mem),
-      .mst_req_o(axil_req),
-      .mst_resp_i(axil_resp)
+  axi_to_mem #(
+      .axi_req_t   (req_t),
+      .axi_resp_t  (resp_t),
+      .AddrWidth   (AW),
+      .DataWidth   (DW),
+      .IdWidth     (IW),
+      .NumBanks    (1),
+      .BufDepth    (1),
+      .HideStrb    (0),
+      .OutFifoDepth(1)
+  ) i_converter (
+      .clk_i       (clk_i),
+      .rst_ni      (arst_ni),
+      .busy_o      (),
+      .axi_req_i   (fifo_req),
+      .axi_resp_o  (fifo_resp),
+      .mem_req_o   (mem_req),
+      .mem_gnt_i   ('1),
+      .mem_addr_o  (addr_out),
+      .mem_wdata_o (mem_wdata),
+      .mem_strb_o  (mem_strb),
+      .mem_atop_o  (),
+      .mem_we_o    (mem_we),
+      .mem_rvalid_i(mem_rvalid),
+      .mem_rdata_i (mem_rdata)
   );
 
-  logic serving_read;
-  logic serving_write;
-
-  assign serving_read = axil_req.ar_valid & axil_resp.ar_ready
-                      & axil_resp.r_valid & axil_req.r_ready;
-
-  assign serving_write = axil_req.aw_valid & axil_resp.aw_ready
-                       & axil_req.w_valid & axil_resp.w_ready
-                       & axil_resp.b_valid & axil_req.b_ready
-                       & ~serving_read;
-
-  assign axil_resp.aw_ready = axil_req.aw_valid & axil_req.w_valid & axil_req.b_ready;
-  assign axil_resp.w_ready = axil_resp.aw_ready;
-  assign axil_resp.b_valid = axil_resp.aw_ready;
-  assign axil_resp.ar_ready = axil_req.ar_valid & axil_req.r_ready;
-  assign axil_resp.r_valid = axil_resp.ar_ready;
-
-  // logic [(1+AW-3)-1:0] mem_addr;
-  logic [AW-3:0] mem_addr;
-
-  assign mem_addr = serving_write
-                  ? {axil_req.aw.prot[1], axil_req.aw.addr[AW-1:3]}
-                  : {axil_req.ar.prot[1], axil_req.ar.addr[AW-1:3]};
-
-  assign axil_resp.r.resp = '0;
-  assign axil_resp.b.resp = '0;
-
-  block_memory #(
-      .VERIF_ONLY(1),
-      .RESETTABLE(0),
-      .ADDR_WIDTH(AW-2),
-      .DATA_WIDTH(DW),
-      .NUM_ROW   (1024),
-      .NUM_COL   ((DW+31)/32)
-  ) u_mem (
-      .clk_i(clk_i),
-      .arst_ni(arst_ni),
-      .addr_i(mem_addr),
-      .wdata_i(axil_req.w.data),
-      .be_i(axil_req.w.strb),
-      .we_i(serving_write),
-      .rdata_o(axil_resp.r.data)
-  );
-
-`ifdef SIMULATION
-
-  function automatic void write_mem(input logic [63:0] addr, input logic [7:0] data);
-    if (u_mem.VERIF_ONLY) begin
-      u_mem.g_vip.mem[addr] = data;
-    end else begin
-      // TODO
-    end
+  function automatic void write_mem_b(input logic [63:0] addr, input logic [7:0] data);
+    mem[addr-MEM_BASE] = data;
   endfunction
 
-  function automatic logic [7:0] read_mem(input logic [63:0] addr);
-    if (u_mem.VERIF_ONLY) begin
-      return u_mem.g_vip.mem[addr];
-    end else begin
-      // TODO
-    end
+  function automatic logic [7:0] read_mem_b(input logic [63:0] addr);
+    return mem[addr-MEM_BASE];
   endfunction
 
-`endif
+  function automatic void write_mem_h(input logic [63:0] addr, input logic [15:0] data);
+    mem[addr-MEM_BASE+1] = data[15:8];
+    mem[addr-MEM_BASE+0] = data[7:0];
+  endfunction
+
+  function automatic logic [15:0] read_mem_h(input logic [63:0] addr);
+    return {mem[addr-MEM_BASE+1], mem[addr-MEM_BASE+0]};
+  endfunction
+
+  function automatic void write_mem_w(input logic [63:0] addr, input logic [31:0] data);
+    mem[addr-MEM_BASE+3] = data[31:24];
+    mem[addr-MEM_BASE+2] = data[23:16];
+    mem[addr-MEM_BASE+1] = data[15:8];
+    mem[addr-MEM_BASE+0] = data[7:0];
+  endfunction
+
+  function automatic logic [31:0] read_mem_w(input logic [63:0] addr);
+    return {mem[addr-MEM_BASE+3], mem[addr-MEM_BASE+2], mem[addr-MEM_BASE+1], mem[addr-MEM_BASE+0]};
+  endfunction
+
+  function automatic void write_mem_d(input logic [63:0] addr, input logic [63:0] data);
+    mem[addr-MEM_BASE+7] = data[63:56];
+    mem[addr-MEM_BASE+6] = data[55:48];
+    mem[addr-MEM_BASE+5] = data[47:40];
+    mem[addr-MEM_BASE+4] = data[39:32];
+    mem[addr-MEM_BASE+3] = data[31:24];
+    mem[addr-MEM_BASE+2] = data[23:16];
+    mem[addr-MEM_BASE+1] = data[15:8];
+    mem[addr-MEM_BASE+0] = data[7:0];
+  endfunction
+
+  function automatic logic [63:0] read_mem_d(input logic [63:0] addr);
+    return {
+      mem[addr-MEM_BASE+7],
+      mem[addr-MEM_BASE+6],
+      mem[addr-MEM_BASE+5],
+      mem[addr-MEM_BASE+4],
+      mem[addr-MEM_BASE+3],
+      mem[addr-MEM_BASE+2],
+      mem[addr-MEM_BASE+1],
+      mem[addr-MEM_BASE+0]
+    };
+  endfunction
 
 endmodule

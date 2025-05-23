@@ -35,8 +35,8 @@ module ariane_tb;
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   ariane #(
-      .DmBaseAddress(soc_pkg::DM_BASE_ADDR),
-      .CachedAddrBeg(soc_pkg::CACHEABLE_ADDR_START)
+      .DmBaseAddress(0),
+      .CachedAddrBeg('h80000000)
   ) u_core (
       .clk_i(clk),
       .rst_ni(rst_n),
@@ -51,8 +51,8 @@ module ariane_tb;
   );
 
   axi_ram #(
-      .MEM_BASE(soc_pkg::RAM_BASE),
-      .MEM_SIZE(soc_pkg::RAM_SIZE),
+      .MEM_BASE(4096),
+      .MEM_SIZE(20),
       .req_t   (ariane_axi_pkg::m_req_t),
       .resp_t  (ariane_axi_pkg::m_resp_t)
   ) u_axi_ram (
@@ -68,7 +68,10 @@ module ariane_tb;
 
   // Function to load memory contents from a file
   function automatic void load_memory(string filename);
-    $readmemh(filename, u_axi_ram.u_mem.g_vip.mem);
+    bit [7:0] mem[longint];
+    $readmemh(filename, mem);
+    foreach (mem[i]) u_axi_ram.write_mem_b(i, mem[i]);
+    // foreach (mem[i]) $display("MEM[0x%0x]:0x%x", i, u_axi_ram.read_mem_b(i));
   endfunction
 
   // Function to load symbols from a file
@@ -119,12 +122,21 @@ module ariane_tb;
     join_none
   endtask
 
+  task static wait_exit();
+    longint exit_code;
+    do begin
+      repeat (10) @(posedge clk);
+      exit_code = u_axi_ram.read_mem_d(sym["tohost"]);
+    end while (exit_code == -1);
+    $display("\033[0;35mEXIT CODE      : 0x%08x\033[0m", exit_code);
+    if (exit_code == 0) $display("\033[1;32m************** TEST PASSED **************\033[0m");
+    else $display("\033[1;31m************** TEST FAILED **************\033[0m");
+  endtask
+
   initial begin
 
     // Set time format to microseconds
     $timeformat(-6, 3, "us");
-    $dumpfile("prog.vcd");
-    $dumpvars(0, ariane_tb);
 
     if ($test$plusargs("DEBUG")) begin
       $display("\033[1;33m###### DEBUG ENABLED ######\033[0m");
@@ -150,11 +162,16 @@ module ariane_tb;
     start_clock();
 
     // Wait for the test to exit
-    // wait_exit();
+    wait_exit();
 
     // Finish simulation after 100ns
-    #1000ns $finish;
+    $finish;
 
+  end
+
+  initial begin
+    #1ms;
+    $fatal(1, "Simulation timeout after 1ms");
   end
 
 endmodule

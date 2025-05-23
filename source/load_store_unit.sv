@@ -1,6 +1,4 @@
-import ariane_pkg::*;
-
-module load_store_unit #(
+import ariane_pkg::*;module load_store_unit #(
     parameter int unsigned ASID_WIDTH = 1
 ) (
     input  logic clk_i,
@@ -10,63 +8,53 @@ module load_store_unit #(
     input  logic amo_valid_commit_i,
 
     input  fu_data_t fu_data_i,
-    output logic     lsu_ready_o,  // FU is ready e.g. not busy
-    input  logic     lsu_valid_i,  // Input is valid
+    output logic     lsu_ready_o,  
+    input  logic     lsu_valid_i,  
 
-    output logic [TRANS_ID_BITS-1:0] load_trans_id_o,          // ID of scoreboard entry at which to write back
+    output logic [TRANS_ID_BITS-1:0] load_trans_id_o,          
     output logic [63:0] load_result_o,
     output logic load_valid_o,
-    output exception_t load_exception_o,  // to WB, signal exception status LD exception
+    output exception_t load_exception_o,  
 
-    output logic [TRANS_ID_BITS-1:0] store_trans_id_o,         // ID of scoreboard entry at which to write back
+    output logic [TRANS_ID_BITS-1:0] store_trans_id_o,         
     output logic [63:0] store_result_o,
     output logic store_valid_o,
-    output exception_t store_exception_o,  // to WB, signal exception status ST exception
+    output exception_t store_exception_o,  
 
-    input  logic commit_i,       // commit the pending store
-    output logic commit_ready_o, // commit queue is ready to accept another commit request
+    input  logic commit_i,       
+    output logic commit_ready_o, 
 
-    input logic enable_translation_i,   // enable virtual memory translation
-    input logic en_ld_st_translation_i, // enable virtual memory translation for load/stores
+    input logic enable_translation_i,   
+    input logic en_ld_st_translation_i, 
 
-    // icache translation requests
     input  icache_areq_o_t icache_areq_i,
     output icache_areq_i_t icache_areq_o,
 
-    input  riscv_pkg::priv_lvl_t                  priv_lvl_i,        // From CSR register file
-    input  riscv_pkg::priv_lvl_t                  ld_st_priv_lvl_i,  // From CSR register file
-    input  logic                              sum_i,             // From CSR register file
-    input  logic                              mxr_i,             // From CSR register file
-    input  logic             [          43:0] satp_ppn_i,        // From CSR register file
-    input  logic             [ASID_WIDTH-1:0] asid_i,            // From CSR register file
+    input  riscv_pkg::priv_lvl_t                  priv_lvl_i,        
+    input  riscv_pkg::priv_lvl_t                  ld_st_priv_lvl_i,  
+    input  logic                              sum_i,             
+    input  logic                              mxr_i,             
+    input  logic             [          43:0] satp_ppn_i,        
+    input  logic             [ASID_WIDTH-1:0] asid_i,            
     input  logic                              flush_tlb_i,
-    // Performance counters
+
     output logic                              itlb_miss_o,
     output logic                              dtlb_miss_o,
 
-    // interface to dcache
     input  dcache_req_o_t [2:0] dcache_req_ports_i,
     output dcache_req_i_t [2:0] dcache_req_ports_o,
-    // AMO interface
+
     output amo_req_t            amo_req_o,
     input  amo_resp_t           amo_resp_i
 );
-  // data is misaligned
+
   logic             data_misaligned;
-  // --------------------------------------
-  // 1st register stage - (stall registers)
-  // --------------------------------------
-  // those are the signals which are always correct
-  // e.g.: they keep the value in the stall case
+
   lsu_ctrl_t        lsu_ctrl;
 
   logic             pop_st;
   logic             pop_ld;
 
-  // ------------------------------
-  // Address Generation Unit (AGU)
-  // ------------------------------
-  // virtual address as calculated by the AGU in the first cycle
   logic      [63:0] vaddr_i;
   logic      [ 7:0] be_i;
 
@@ -99,15 +87,12 @@ module load_store_unit #(
   exception_t                     ld_ex;
   exception_t                     st_ex;
 
-  // -------------------
-  // MMU e.g.: TLBs/PTW
-  // -------------------
   mmu #(
       .INSTR_TLB_ENTRIES(16),
       .DATA_TLB_ENTRIES (16),
       .ASID_WIDTH       (ASID_WIDTH)
   ) i_mmu (
-      // misaligned bypass
+
       .misaligned_ex_i(misaligned_exception),
       .lsu_is_store_i (st_translation_req),
       .lsu_req_i      (translation_req),
@@ -115,18 +100,16 @@ module load_store_unit #(
       .lsu_valid_o    (translation_valid),
       .lsu_paddr_o    (mmu_paddr),
       .lsu_exception_o(mmu_exception),
-      .lsu_dtlb_hit_o (dtlb_hit),               // send in the same cycle as the request
-      // connecting PTW to D$ IF
+      .lsu_dtlb_hit_o (dtlb_hit),               
+
       .req_port_i     (dcache_req_ports_i[0]),
       .req_port_o     (dcache_req_ports_o[0]),
-      // icache address translation requests
+
       .icache_areq_i  (icache_areq_i),
       .icache_areq_o  (icache_areq_o),
       .*
   );
-  // ------------------
-  // Store Unit
-  // ------------------
+
   store_unit i_store_unit (
       .clk_i,
       .rst_ni,
@@ -144,26 +127,23 @@ module load_store_unit #(
       .trans_id_o           (st_trans_id),
       .result_o             (st_result),
       .ex_o                 (st_ex),
-      // MMU port
+
       .translation_req_o    (st_translation_req),
       .vaddr_o              (st_vaddr),
       .paddr_i              (mmu_paddr),
       .ex_i                 (mmu_exception),
       .dtlb_hit_i           (dtlb_hit),
-      // Load Unit
+
       .page_offset_i        (page_offset),
       .page_offset_matches_o(page_offset_matches),
-      // AMOs
+
       .amo_req_o,
       .amo_resp_i,
-      // to memory arbiter
+
       .req_port_i           (dcache_req_ports_i[2]),
       .req_port_o           (dcache_req_ports_o[2])
   );
 
-  // ------------------
-  // Load Unit
-  // ------------------
   load_unit i_load_unit (
       .valid_i   (ld_valid_i),
       .lsu_ctrl_i(lsu_ctrl),
@@ -173,24 +153,21 @@ module load_store_unit #(
       .trans_id_o           (ld_trans_id),
       .result_o             (ld_result),
       .ex_o                 (ld_ex),
-      // MMU port
+
       .translation_req_o    (ld_translation_req),
       .vaddr_o              (ld_vaddr),
       .paddr_i              (mmu_paddr),
       .ex_i                 (mmu_exception),
       .dtlb_hit_i           (dtlb_hit),
-      // to store unit
+
       .page_offset_o        (page_offset),
       .page_offset_matches_i(page_offset_matches),
-      // to memory arbiter
+
       .req_port_i           (dcache_req_ports_i[1]),
       .req_port_o           (dcache_req_ports_o[1]),
       .*
   );
 
-  // ----------------------------
-  // Output Pipeline Register
-  // ----------------------------
   pipe_reg_simple #(
       .dtype(logic [$bits(ld_valid) + $bits(ld_trans_id) + $bits(ld_result) + $bits(ld_ex) - 1:0]),
       .Depth(NR_LOAD_PIPE_REGS)
@@ -211,7 +188,6 @@ module load_store_unit #(
       .d_o({store_valid_o, store_trans_id_o, store_result_o, store_exception_o})
   );
 
-  // determine whether this is a load or store
   always_comb begin : which_op
 
     ld_valid_i      = 1'b0;
@@ -220,40 +196,26 @@ module load_store_unit #(
     translation_req = 1'b0;
     mmu_vaddr       = 64'b0;
 
-    // check the operator to activate the right functional unit accordingly
     unique case (lsu_ctrl.fu)
-      // all loads go here
+
       LOAD: begin
         ld_valid_i      = lsu_ctrl.valid;
         translation_req = ld_translation_req;
         mmu_vaddr       = ld_vaddr;
       end
-      // all stores go here
+
       STORE: begin
         st_valid_i      = lsu_ctrl.valid;
         translation_req = st_translation_req;
         mmu_vaddr       = st_vaddr;
       end
-      // not relevant for the LSU
+
       default: ;
     endcase
   end
 
-
-  // ---------------
-  // Byte Enable
-  // ---------------
-  // we can generate the byte enable from the virtual address since the last
-  // 12 bit are the same anyway
-  // and we can always generate the byte enable from the address at hand
   assign be_i = be_gen(vaddr_i[2:0], extract_transfer_size(fu_data_i.operator));
 
-  // ------------------------
-  // Misaligned Exception
-  // ------------------------
-  // we can detect a misaligned exception immediately
-  // the misaligned exception is passed to the functional unit via the MMU, which in case
-  // can augment the exception if other memory related exceptions like a page fault or access errors
   always_comb begin : data_misaligned_detection
 
     misaligned_exception = {64'b0, 64'b0, 1'b0};
@@ -262,7 +224,7 @@ module load_store_unit #(
 
     if (lsu_ctrl.valid) begin
       case (lsu_ctrl.operator)
-        // double word
+
         LD, SD, FLD, FSD,
                 AMO_LRD, AMO_SCD,
                 AMO_SWAPD, AMO_ADDD, AMO_ANDD, AMO_ORD,
@@ -272,7 +234,7 @@ module load_store_unit #(
             data_misaligned = 1'b1;
           end
         end
-        // word
+
         LW, LWU, SW, FLW, FSW,
                 AMO_LRW, AMO_SCW,
                 AMO_SWAPW, AMO_ADDW, AMO_ANDW, AMO_ORW,
@@ -282,13 +244,13 @@ module load_store_unit #(
             data_misaligned = 1'b1;
           end
         end
-        // half word
+
         LH, LHU, SH, FLH, FSH: begin
           if (lsu_ctrl.vaddr[0] != 1'b0) begin
             data_misaligned = 1'b1;
           end
         end
-        // byte -> is always aligned
+
         default: ;
       endcase
     end
@@ -303,7 +265,6 @@ module load_store_unit #(
       end
     end
 
-    // we work with SV39, so if VM is enabled, check that all bits [63:38] are equal
     if (en_ld_st_translation_i && !((&lsu_ctrl.vaddr[63:38]) == 1'b1 || (|lsu_ctrl.vaddr[63:38]) == 1'b0)) begin
 
       if (lsu_ctrl.fu == LOAD) begin
@@ -315,10 +276,6 @@ module load_store_unit #(
     end
   end
 
-  // ------------------
-  // LSU Control
-  // ------------------
-  // new data arrives here
   lsu_ctrl_t lsu_req_i;
 
   assign lsu_req_i = {

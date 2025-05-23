@@ -1,9 +1,9 @@
 module amo_alu (
-        // AMO interface
+
         input  ariane_pkg::amo_t  amo_op_i,
         input  logic [63:0]       amo_operand_a_i,
         input  logic [63:0]       amo_operand_b_i,
-        output logic [63:0]       amo_result_o // result of atomic memory operation
+        output logic [63:0]       amo_result_o 
 );
 
     logic [64:0] adder_sum;
@@ -19,7 +19,7 @@ module amo_alu (
         amo_result_o = amo_operand_b_i;
 
         unique case (amo_op_i)
-            // the default is to output operand_b
+
             ariane_pkg::AMO_SC:;
             ariane_pkg::AMO_SWAP:;
             ariane_pkg::AMO_ADD: amo_result_o = adder_sum[63:0];

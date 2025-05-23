@@ -1,31 +1,28 @@
-import ariane_pkg::*;
-
-module perf_counters #(
+import ariane_pkg::*;module perf_counters #(
     int unsigned NR_EXTERNAL_COUNTERS = 1
 )(
     input  logic                                    clk_i,
     input  logic                                    rst_ni,
-    input  logic                                    debug_mode_i, // debug mode
-    // SRAM like interface
-    input  logic [4:0]                              addr_i,   // read/write address (up to 29 aux counters possible in riscv encoding.h)
-    input  logic                                    we_i,     // write enable
-    input  logic [63:0]                             data_i,   // data to write
-    output logic [63:0]                             data_o,   // data to read
-    // from commit stage
-    input  scoreboard_entry_t [NR_COMMIT_PORTS-1:0] commit_instr_i,     // the instruction we want to commit
-    input  logic [NR_COMMIT_PORTS-1:0]              commit_ack_i,       // acknowledge that we are indeed committing
+    input  logic                                    debug_mode_i, 
 
-    // from L1 caches
+    input  logic [4:0]                              addr_i,   
+    input  logic                                    we_i,     
+    input  logic [63:0]                             data_i,   
+    output logic [63:0]                             data_o,   
+
+    input  scoreboard_entry_t [NR_COMMIT_PORTS-1:0] commit_instr_i,     
+    input  logic [NR_COMMIT_PORTS-1:0]              commit_ack_i,       
+
     input  logic                                    l1_icache_miss_i,
     input  logic                                    l1_dcache_miss_i,
-    // from MMU
+
     input  logic                                    itlb_miss_i,
     input  logic                                    dtlb_miss_i,
-    // from issue stage
+
     input  logic                                    sb_full_i,
-    // from frontend
+
     input  logic                                    if_empty_i,
-    // from PC Gen
+
     input  exception_t                              ex_i,
     input  logic                                    eret_i,
     input  branchpredict_t                          resolved_branch_i
@@ -37,11 +34,8 @@ module perf_counters #(
         perf_counter_d = perf_counter_q;
         data_o = 'b0;
 
-        // don't increment counters in debug mode
         if (!debug_mode_i) begin
-            // ------------------------------
-            // Update Performance Counters
-            // ------------------------------
+
             if (l1_icache_miss_i)
                 perf_counter_d[riscv_pkg::CSR_L1_ICACHE_MISS[4:0]] = perf_counter_q[riscv_pkg::CSR_L1_ICACHE_MISS[4:0]] + 1'b1;
 
@@ -54,7 +48,6 @@ module perf_counters #(
             if (dtlb_miss_i)
                 perf_counter_d[riscv_pkg::CSR_DTLB_MISS[4:0]] = perf_counter_q[riscv_pkg::CSR_DTLB_MISS[4:0]] + 1'b1;
 
-            // instruction related perf counters
             for (int unsigned i = 0; i < NR_COMMIT_PORTS-1; i++) begin
                 if (commit_ack_i[i]) begin
                     if (commit_instr_i[i].fu == LOAD)
@@ -66,12 +59,9 @@ module perf_counters #(
                     if (commit_instr_i[i].fu == CTRL_FLOW)
                         perf_counter_d[riscv_pkg::CSR_BRANCH_JUMP[4:0]] = perf_counter_q[riscv_pkg::CSR_BRANCH_JUMP[4:0]] + 1'b1;
 
-                    // The standard software calling convention uses register x1 to hold the return address on a call
-                    // the unconditional jump is decoded as ADD op
                     if (commit_instr_i[i].fu == CTRL_FLOW && commit_instr_i[i].op == '0 && commit_instr_i[i].rd == 'b1)
                         perf_counter_d[riscv_pkg::CSR_CALL[4:0]] = perf_counter_q[riscv_pkg::CSR_CALL[4:0]] + 1'b1;
 
-                    // Return from call
                     if (commit_instr_i[i].op == JALR && commit_instr_i[i].rs1 == 'b1)
                         perf_counter_d[riscv_pkg::CSR_RET[4:0]] = perf_counter_q[riscv_pkg::CSR_RET[4:0]] + 1'b1;
                 end
@@ -95,16 +85,12 @@ module perf_counters #(
             end
         end
 
-        // write after read
         data_o = perf_counter_q[addr_i];
         if (we_i) begin
             perf_counter_d[addr_i] = data_i;
         end
     end
 
-    // ----------------
-    // Registers
-    // ----------------
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if (~rst_ni) begin
            perf_counter_q <= '0;

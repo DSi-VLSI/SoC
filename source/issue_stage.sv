@@ -1,53 +1,49 @@
-import ariane_pkg::*;
-
-module issue_stage #(
+import ariane_pkg::*;module issue_stage #(
     parameter int unsigned NR_ENTRIES = 8,
     parameter int unsigned NR_WB_PORTS = 4,
     parameter int unsigned NR_COMMIT_PORTS = 2
 )(
-    input  logic                                     clk_i,     // Clock
-    input  logic                                     rst_ni,    // Asynchronous reset active low
+    input  logic                                     clk_i,     
+    input  logic                                     rst_ni,    
 
     output logic                                     sb_full_o,
     input  logic                                     flush_unissued_instr_i,
     input  logic                                     flush_i,
-    // from ISSUE
+
     input  scoreboard_entry_t                        decoded_instr_i,
     input  logic                                     decoded_instr_valid_i,
     input  logic                                     is_ctrl_flow_i,
     output logic                                     decoded_instr_ack_o,
-    // to EX
+
     output fu_data_t                                 fu_data_o,
     output logic [63:0]                              pc_o,
     output logic                                     is_compressed_instr_o,
     input  logic                                     flu_ready_i,
     output logic                                     alu_valid_o,
-    // ex just resolved our predicted branch, we are ready to accept new requests
+
     input  logic                                     resolve_branch_i,
 
     input  logic                                     lsu_ready_i,
     output logic                                     lsu_valid_o,
-    // branch prediction
-    output logic                                     branch_valid_o,   // use branch prediction unit
-    output branchpredict_sbe_t                       branch_predict_o, // Branch predict Out
+
+    output logic                                     branch_valid_o,   
+    output branchpredict_sbe_t                       branch_predict_o, 
 
     output logic                                     mult_valid_o,
 
     input  logic                                     fpu_ready_i,
     output logic                                     fpu_valid_o,
-    output logic [1:0]                               fpu_fmt_o,        // FP fmt field from instr.
-    output logic [2:0]                               fpu_rm_o,         // FP rm field from instr.
+    output logic [1:0]                               fpu_fmt_o,        
+    output logic [2:0]                               fpu_rm_o,         
 
     output logic                                     csr_valid_o,
 
-    // write back port
     input logic [NR_WB_PORTS-1:0][TRANS_ID_BITS-1:0] trans_id_i,
     input branchpredict_t                            resolved_branch_i,
     input logic [NR_WB_PORTS-1:0][63:0]              wbdata_i,
-    input exception_t [NR_WB_PORTS-1:0]              ex_ex_i, // exception from execute stage
+    input exception_t [NR_WB_PORTS-1:0]              ex_ex_i, 
     input logic [NR_WB_PORTS-1:0]                    wb_valid_i,
 
-    // commit port
     input  logic [NR_COMMIT_PORTS-1:0][4:0]          waddr_i,
     input  logic [NR_COMMIT_PORTS-1:0][63:0]         wdata_i,
     input  logic [NR_COMMIT_PORTS-1:0]               we_gpr_i,
@@ -56,9 +52,7 @@ module issue_stage #(
     output scoreboard_entry_t [NR_COMMIT_PORTS-1:0]  commit_instr_o,
     input  logic              [NR_COMMIT_PORTS-1:0]  commit_ack_i
 );
-    // ---------------------------------------------------
-    // Scoreboard (SB) <-> Issue and Read Operands (IRO)
-    // ---------------------------------------------------
+
     fu_t  [2**REG_ADDR_SIZE:0] rd_clobber_gpr_sb_iro;
     fu_t  [2**REG_ADDR_SIZE:0] rd_clobber_fpr_sb_iro;
 
@@ -82,9 +76,6 @@ module issue_stage #(
     logic                      issue_instr_valid_sb_iro;
     logic                      issue_ack_iro_sb;
 
-    // ---------------------------------------------------------
-    // 1. Re-name
-    // ---------------------------------------------------------
     re_name i_re_name (
         .clk_i                  ( clk_i                        ),
         .rst_ni                 ( rst_ni                       ),
@@ -98,9 +89,6 @@ module issue_stage #(
         .issue_ack_i            ( issue_ack_sb_rename          )
     );
 
-    // ---------------------------------------------------------
-    // 2. Manage instructions in a scoreboard
-    // ---------------------------------------------------------
     scoreboard #(
         .NR_ENTRIES (NR_ENTRIES ),
         .NR_WB_PORTS(NR_WB_PORTS)
@@ -133,9 +121,6 @@ module issue_stage #(
         .*
     );
 
-    // ---------------------------------------------------------
-    // 3. Issue instruction and read operand, also commit
-    // ---------------------------------------------------------
     issue_read_operands i_issue_read_operands  (
         .flush_i             ( flush_unissued_instr_i          ),
         .issue_instr_i       ( issue_instr_sb_iro              ),

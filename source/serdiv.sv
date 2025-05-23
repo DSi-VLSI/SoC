@@ -1,29 +1,23 @@
-import ariane_pkg::*;
-
-module serdiv #(
+import ariane_pkg::*;module serdiv #(
   parameter WIDTH       = 64
 ) (
   input  logic                      clk_i,
   input  logic                      rst_ni,
-  // input IF
+
   input  logic [TRANS_ID_BITS-1:0]  id_i,
   input  logic [WIDTH-1:0]          op_a_i,
   input  logic [WIDTH-1:0]          op_b_i,
-  input  logic [1:0]                opcode_i, // 0: udiv, 2: urem, 1: div, 3: rem
-  // handshake
-  input  logic                      in_vld_i, // there is a cycle delay from in_rdy_o->in_vld_i, see issue_read_operands.sv stage
+  input  logic [1:0]                opcode_i, 
+
+  input  logic                      in_vld_i, 
   output logic                      in_rdy_o,
   input  logic                      flush_i,
-  // output IF
+
   output logic                      out_vld_o,
   input  logic                      out_rdy_i,
   output logic [TRANS_ID_BITS-1:0]  id_o,
   output logic [WIDTH-1:0]          res_o
 );
-
-/////////////////////////////////////
-// signal declarations
-/////////////////////////////////////
 
   enum logic [1:0] {IDLE, DIVIDE, FINISH} state_d, state_q;
 
@@ -57,12 +51,6 @@ module serdiv #(
   logic lzc_a_no_one, lzc_b_no_one;
   logic div_res_zero_d, div_res_zero_q;
 
-
-/////////////////////////////////////
-// align the input operands
-// for faster division
-/////////////////////////////////////
-
   assign op_b_zero = (op_b_i == 0);
   assign op_a_sign = op_a_i[$high(op_a_i)];
   assign op_b_sign = op_b_i[$high(op_b_i)];
@@ -71,7 +59,7 @@ module serdiv #(
   assign lzc_b_input = (opcode_i[0] & op_b_sign) ? ~op_b_i         : op_b_i;
 
   lzc #(
-    .MODE    ( 1          ), // count leading zeros
+    .MODE    ( 1          ), 
     .WIDTH   ( WIDTH      )
   ) i_lzc_a (
     .in_i    ( lzc_a_input  ),
@@ -80,7 +68,7 @@ module serdiv #(
   );
 
   lzc #(
-    .MODE    ( 1          ), // count leading zeros
+    .MODE    ( 1          ), 
     .WIDTH   ( WIDTH      )
   ) i_lzc_b (
     .in_i    ( lzc_b_input  ),
@@ -93,45 +81,29 @@ module serdiv #(
 
   assign op_b         = op_b_i <<< $unsigned(div_shift);
 
-  // the division is zero if |opB| > |opA| and can be terminated
   assign div_res_zero_d = (load_en) ? ($signed(div_shift) < 0) : div_res_zero_q;
-
-/////////////////////////////////////
-// Datapath
-/////////////////////////////////////
 
   assign pm_sel      = load_en & ~(opcode_i[0] & (op_a_sign ^ op_b_sign));
 
-  // muxes
   assign add_mux     = (load_en)   ? op_a_i  : op_b_q;
 
-  // attention: logical shift by one in case of negative operand B!
   assign b_mux       = (load_en)   ? op_b : {comp_inv_q, (op_b_q[$high(op_b_q):1])};
 
-  // in case of bad timing, we could output from regs -> needs a cycle more in the FSM
   assign out_mux     = (rem_sel_q) ? op_a_q : res_q;
-  // assign out_mux     = (rem_sel_q) ? op_a_d : res_d;
 
-  // invert if necessary
   assign res_o       = (res_inv_q) ? -$signed(out_mux) : out_mux;
 
-  // main comparator
   assign ab_comp     = ((op_a_q == op_b_q) | ((op_a_q > op_b_q) ^ comp_inv_q)) & ((|op_a_q) | op_b_zero_q);
 
-  // main adder
   assign add_tmp     = (load_en) ? 0 : op_a_q;
   assign add_out     = (pm_sel)  ? add_tmp + add_mux : add_tmp - $signed(add_mux);
-
-/////////////////////////////////////
-// FSM, counter
-/////////////////////////////////////
 
   assign cnt_zero = (cnt_q == 0);
   assign cnt_d    = (load_en)   ? div_shift  :
                     (~cnt_zero) ? cnt_q - 1  : cnt_q;
 
   always_comb begin : p_fsm
-    // default
+
     state_d        = state_q;
     in_rdy_o       = 1'b0;
     out_vld_o      = 1'b0;
@@ -145,7 +117,7 @@ module serdiv #(
         in_rdy_o    = 1'b1;
 
         if (in_vld_i) begin
-          in_rdy_o  = 1'b0;// there is a cycle delay until the valid signal is asserted by the id stage
+          in_rdy_o  = 1'b0;
           a_reg_en  = 1'b1;
           b_reg_en  = 1'b1;
           load_en   = 1'b1;
@@ -158,12 +130,12 @@ module serdiv #(
           b_reg_en     = 1'b1;
           res_reg_en   = 1'b1;
         end
-        // can end the division now if the result is clearly 0
+
         if(div_res_zero_q) begin
           out_vld_o = 1'b1;
           state_d   = FINISH;
           if(out_rdy_i) begin
-            // in_rdy_o = 1'b1;// there is a cycle delay until the valid signal is asserted by the id stage
+
             state_d  = IDLE;
           end
         end else if (cnt_zero) begin
@@ -174,7 +146,7 @@ module serdiv #(
         out_vld_o = 1'b1;
 
         if (out_rdy_i) begin
-          // in_rdy_o = 1'b1;// there is a cycle delay until the valid signal is asserted by the id stage
+
           state_d  = IDLE;
         end
       end
@@ -191,17 +163,11 @@ module serdiv #(
     end
   end
 
-/////////////////////////////////////
-// regs, flags
-/////////////////////////////////////
-
-  // get flags
   assign rem_sel_d    = (load_en) ? opcode_i[1]               : rem_sel_q;
   assign comp_inv_d   = (load_en) ? opcode_i[0] & op_b_sign   : comp_inv_q;
   assign op_b_zero_d  = (load_en) ? op_b_zero                 : op_b_zero_q;
   assign res_inv_d    = (load_en) ? (~op_b_zero | opcode_i[1]) & opcode_i[0] & (op_a_sign ^ op_b_sign) : res_inv_q;
 
-  // transaction id
   assign id_d = (load_en) ? id_i : id_q;
   assign id_o = id_q;
 

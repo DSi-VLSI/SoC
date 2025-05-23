@@ -4,15 +4,15 @@ module ariane_regfile #(
   parameter int unsigned NR_WRITE_PORTS = 2,
   parameter bit          ZERO_REG_ZERO  = 0
 )(
-  // clock and reset
+
   input  logic                                      clk_i,
   input  logic                                      rst_ni,
-  // disable clock gates for testing
+
   input  logic                                      test_en_i,
-  // read port
+
   input  logic [NR_READ_PORTS-1:0][4:0]             raddr_i,
   output logic [NR_READ_PORTS-1:0][DATA_WIDTH-1:0]  rdata_o,
-  // write port
+
   input  logic [NR_WRITE_PORTS-1:0][4:0]            waddr_i,
   input  logic [NR_WRITE_PORTS-1:0][DATA_WIDTH-1:0] wdata_i,
   input  logic [NR_WRITE_PORTS-1:0]                 we_i
@@ -23,7 +23,6 @@ module ariane_regfile #(
 
   logic [NUM_WORDS-1:0][DATA_WIDTH-1:0]     mem;
   logic [NR_WRITE_PORTS-1:0][NUM_WORDS-1:0] we_dec;
-
 
     always_comb begin : we_decoder
         for (int unsigned j = 0; j < NR_WRITE_PORTS; j++) begin
@@ -36,7 +35,6 @@ module ariane_regfile #(
         end
     end
 
-    // loop from 1 to NUM_WORDS-1 as R0 is nil
     always_ff @(posedge clk_i, negedge rst_ni) begin : register_write_behavioral
         if (~rst_ni) begin
             mem <= '{default: '0};

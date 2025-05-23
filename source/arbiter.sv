@@ -2,9 +2,9 @@ module arbiter #(
     parameter int unsigned NR_PORTS   = 3,
     parameter int unsigned DATA_WIDTH = 64
 ) (
-    input logic clk_i,  // Clock
-    input logic rst_ni,  // Asynchronous reset active low
-    // master ports
+    input logic clk_i,
+    input logic rst_ni,
+
     input logic [NR_PORTS-1:0] data_req_i,
     input logic [NR_PORTS-1:0][63:0] address_i,
     input logic [NR_PORTS-1:0][DATA_WIDTH-1:0] data_wdata_i,
@@ -14,7 +14,7 @@ module arbiter #(
     output logic [NR_PORTS-1:0] data_gnt_o,
     output logic [NR_PORTS-1:0] data_rvalid_o,
     output logic [NR_PORTS-1:0][DATA_WIDTH-1:0] data_rdata_o,
-    // slave port
+
     input logic [$clog2(NR_PORTS)-1:0] id_i,
     output logic [$clog2(NR_PORTS)-1:0] id_o,
     input logic [$clog2(NR_PORTS)-1:0] gnt_id_i,
@@ -54,7 +54,7 @@ module arbiter #(
 
     state_d                = state_q;
     req_d                  = req_q;
-    // request port
+
     data_req_o             = 1'b0;
     address_o              = req_q.address;
     data_wdata_o           = req_q.data;
@@ -63,7 +63,7 @@ module arbiter #(
     data_we_o              = req_q.we;
     id_o                   = req_q.id;
     data_gnt_o             = '0;
-    // read port
+
     data_rvalid_o          = '0;
     data_rdata_o           = '0;
     data_rdata_o[req_q.id] = data_rdata_i;
@@ -71,13 +71,13 @@ module arbiter #(
     case (state_q)
 
       IDLE: begin
-        // wait for incoming requests
+
         for (int unsigned i = 0; i < NR_PORTS; i++) begin
           if (data_req_i[i] == 1'b1) begin
             data_req_o    = data_req_i[i];
             data_gnt_o[i] = data_req_i[i];
             request_index = i[$bits(request_index)-1:0];
-            // save the request
+
             req_d.address = address_i[i];
             req_d.id = i[$bits(req_q.id)-1:0];
             req_d.data = data_wdata_i[i];
@@ -85,7 +85,7 @@ module arbiter #(
             req_d.be = data_be_i[i];
             req_d.we = data_we_i[i];
             state_d = SERVING;
-            break;  // break here as this is a priority select
+            break;
           end
         end
 
@@ -105,7 +105,9 @@ module arbiter #(
         end
       end
 
-      default:  /* default */;
+      default: begin
+        state_d = IDLE;
+      end
     endcase
   end
 

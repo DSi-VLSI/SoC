@@ -39,18 +39,6 @@ module soc;
     );
   end
 
-  axi_rom #(
-      .MEM_BASE(soc_pkg::ROM_BASE),
-      .MEM_SIZE(soc_pkg::ROM_SIZE),
-      .req_t   (soc_pkg::s_req_t),
-      .resp_t  (soc_pkg::s_resp_t)
-  ) u_bootrom (
-      .clk_i  (),
-      .arst_ni(),
-      .req_i  (),
-      .resp_o ()
-  );
-
   axi_ram #(
       .MEM_BASE(soc_pkg::RAM_BASE),
       .MEM_SIZE(soc_pkg::RAM_SIZE),

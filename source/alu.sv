@@ -1,8 +1,6 @@
-import ariane_pkg::*;
-
-module alu (
-    input  logic            clk_i,            // Clock
-    input  logic            rst_ni,           // Asynchronous reset active low
+import ariane_pkg::*;module alu (
+    input  logic            clk_i,            
+    input  logic            rst_ni,           
     input  fu_data_t        fu_data_i,
     output logic     [63:0] result_o,
     output logic            alu_branch_res_o
@@ -12,9 +10,8 @@ module alu (
   logic [31:0] operand_a_rev32;
   logic [64:0] operand_b_neg;
   logic [65:0] adder_result_ext_o;
-  logic        less;  // handles both signed and unsigned forms
+  logic        less;  
 
-  // bit reverse operand_a for left shifts and bit counting
   generate
     genvar k;
     for (k = 0; k < 64; k++) assign operand_a_rev[k] = fu_data_i.operand_a[63-k];
@@ -22,9 +19,6 @@ module alu (
     for (k = 0; k < 32; k++) assign operand_a_rev32[k] = fu_data_i.operand_a[31-k];
   endgenerate
 
-  // ------
-  // Adder
-  // ------
   logic adder_op_b_negate;
   logic adder_z_flag;
   logic [64:0] adder_in_a, adder_in_b;
@@ -34,28 +28,24 @@ module alu (
     adder_op_b_negate = 1'b0;
 
     unique case (fu_data_i.operator)
-      // ADDER OPS
+
       EQ, NE, SUB, SUBW: adder_op_b_negate = 1'b1;
 
       default: ;
     endcase
   end
 
-  // prepare operand a
   assign adder_in_a         = {fu_data_i.operand_a, 1'b1};
 
-  // prepare operand b
   assign operand_b_neg      = {fu_data_i.operand_b, 1'b0} ^ {65{adder_op_b_negate}};
   assign adder_in_b         = operand_b_neg;
 
-  // actual adder
   assign adder_result_ext_o = $unsigned(adder_in_a) + $unsigned(adder_in_b);
   assign adder_result       = adder_result_ext_o[64:1];
   assign adder_z_flag       = ~|adder_result;
 
-  // get the right branch comparison result
   always_comb begin : branch_resolve
-    // set comparison by default
+
     alu_branch_res_o = 1'b1;
     case (fu_data_i.operator)
       EQ:       alu_branch_res_o = adder_z_flag;
@@ -66,17 +56,12 @@ module alu (
     endcase
   end
 
-  // ---------
-  // Shifts
-  // ---------
-
-  // TODO: this can probably optimized significantly
-  logic        shift_left;  // should we shift left
+  logic        shift_left;  
   logic        shift_arithmetic;
 
-  logic [63:0] shift_amt;  // amount of shift, to the right
-  logic [63:0] shift_op_a;  // input of the shifter
-  logic [31:0] shift_op_a32;  // input to the 32 bit shift operation
+  logic [63:0] shift_amt;  
+  logic [63:0] shift_op_a;  
+  logic [31:0] shift_op_a32;  
 
   logic [63:0] shift_result;
   logic [31:0] shift_result32;
@@ -93,11 +78,9 @@ module alu (
 
   assign shift_arithmetic = (fu_data_i.operator == SRA) | (fu_data_i.operator == SRAW);
 
-  // right shifts, we let the synthesizer optimize this
   logic [64:0] shift_op_a_64;
   logic [32:0] shift_op_a_32;
 
-  // choose the bit reversed or the normal input for shift operand a
   assign shift_op_a           = shift_left ? operand_a_rev : fu_data_i.operand_a;
   assign shift_op_a32         = shift_left ? operand_a_rev32 : fu_data_i.operand_a[31:0];
 
@@ -107,7 +90,7 @@ module alu (
   assign shift_right_result   = $unsigned($signed(shift_op_a_64) >>> shift_amt[5:0]);
 
   assign shift_right_result32 = $unsigned($signed(shift_op_a_32) >>> shift_amt[4:0]);
-  // bit reverse the shift_right_result for left shifts
+
   genvar j;
   generate
     for (j = 0; j < 64; j++) assign shift_left_result[j] = shift_right_result[63-j];
@@ -118,10 +101,6 @@ module alu (
 
   assign shift_result   = shift_left ? shift_left_result : shift_right_result[63:0];
   assign shift_result32 = shift_left ? shift_left_result32 : shift_right_result32[31:0];
-
-  // ------------
-  // Comparisons
-  // ------------
 
   always_comb begin
     logic sgn;
@@ -134,31 +113,26 @@ module alu (
             $signed({sgn & fu_data_i.operand_b[63], fu_data_i.operand_b}));
   end
 
-  // -----------
-  // Result MUX
-  // -----------
   always_comb begin
     result_o = '0;
 
     unique case (fu_data_i.operator)
-      // Standard Operations
+
       ANDL: result_o = fu_data_i.operand_a & fu_data_i.operand_b;
       ORL:  result_o = fu_data_i.operand_a | fu_data_i.operand_b;
       XORL: result_o = fu_data_i.operand_a ^ fu_data_i.operand_b;
 
-      // Adder Operations
       ADD, SUB: result_o = adder_result;
-      // Add word: Ignore the upper bits and sign extend to 64 bit
+
       ADDW, SUBW: result_o = {{32{adder_result[31]}}, adder_result[31:0]};
-      // Shift Operations
+
       SLL, SRL, SRA: result_o = shift_result;
-      // Shifts 32 bit
+
       SLLW, SRLW, SRAW: result_o = {{32{shift_result32[31]}}, shift_result32[31:0]};
 
-      // Comparison Operations
       SLTS, SLTU: result_o = {63'b0, less};
 
-      default: ;  // default case to suppress unique warning
+      default: ;  
     endcase
   end
 endmodule

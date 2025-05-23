@@ -1,8 +1,8 @@
 module stream_mux #(
-  parameter type DATA_T = logic,  // Vivado requires a default value for type parameters.
-  parameter integer N_INP,
-  /// Dependent parameters, DO NOT OVERRIDE!
-  localparam integer LOG_N_INP = $clog2(N_INP)
+  parameter type DATA_T = logic,  
+  parameter integer N_INP = 0,    
+
+  parameter integer LOG_N_INP = $clog2(N_INP)
 ) (
   input  DATA_T [N_INP-1:0]     inp_data_i,
   input  logic  [N_INP-1:0]     inp_valid_i,

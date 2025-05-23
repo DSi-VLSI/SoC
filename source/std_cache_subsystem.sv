@@ -1,36 +1,33 @@
 import ariane_pkg::*;
-import std_cache_pkg::*;
-
-module std_cache_subsystem #(
+import std_cache_pkg::*;module std_cache_subsystem #(
   parameter logic [63:0] CACHE_START_ADDR = 64'h4000_0000
 ) (
     input logic                            clk_i,
     input logic                            rst_ni,
     input riscv_pkg::priv_lvl_t                priv_lvl_i,
-    // I$
-    input  logic                           icache_en_i,            // enable icache (or bypass e.g: in debug mode)
-    input  logic                           icache_flush_i,         // flush the icache, flush and kill have to be asserted together
-    output logic                           icache_miss_o,          // to performance counter
-    // address translation requests
-    input  icache_areq_i_t                 icache_areq_i,          // to/from frontend
+
+    input  logic                           icache_en_i,            
+    input  logic                           icache_flush_i,         
+    output logic                           icache_miss_o,          
+
+    input  icache_areq_i_t                 icache_areq_i,          
     output icache_areq_o_t                 icache_areq_o,
-    // data requests
-    input  icache_dreq_i_t                 icache_dreq_i,          // to/from frontend
+
+    input  icache_dreq_i_t                 icache_dreq_i,          
     output icache_dreq_o_t                 icache_dreq_o,
-    // AMOs
+
     input  amo_req_t                       amo_req_i,
     output amo_resp_t                      amo_resp_o,
-    // D$
-    // Cache management
-    input  logic                           dcache_enable_i,        // from CSR
-    input  logic                           dcache_flush_i,         // high until acknowledged
-    output logic                           dcache_flush_ack_o,     // send a single cycle acknowledge signal when the cache is flushed
-    output logic                           dcache_miss_o,          // we missed on a ld/st
-    output logic                           wbuffer_empty_o,        // statically set to 1, as there is no wbuffer in this cache system
-    // Request ports
-    input  dcache_req_i_t   [2:0]          dcache_req_ports_i,     // to/from LSU
-    output dcache_req_o_t   [2:0]          dcache_req_ports_o,     // to/from LSU
-    // memory side
+
+    input  logic                           dcache_enable_i,        
+    input  logic                           dcache_flush_i,         
+    output logic                           dcache_flush_ack_o,     
+    output logic                           dcache_miss_o,          
+    output logic                           wbuffer_empty_o,        
+
+    input  dcache_req_i_t   [2:0]          dcache_req_ports_i,     
+    output dcache_req_o_t   [2:0]          dcache_req_ports_o,     
+
     output ariane_axi_pkg::m_req_t               axi_req_o,
     input  ariane_axi_pkg::m_resp_t              axi_resp_i
 );
@@ -59,10 +56,6 @@ module std_cache_subsystem #(
         .axi_resp_i ( axi_resp_icache       )
     );
 
-   // decreasing priority
-   // Port 0: PTW
-   // Port 1: Load Unit
-   // Port 2: Store Unit
    std_nbdcache #(
       .CACHE_START_ADDR ( CACHE_START_ADDR )
    ) i_nbdcache (
@@ -82,14 +75,9 @@ module std_cache_subsystem #(
       .amo_resp_o
    );
 
-    // -----------------------
-    // Arbitrate AXI Ports
-    // -----------------------
     logic [1:0] w_select, w_select_fifo, w_select_arbiter;
     logic w_fifo_empty;
 
-
-    // AR Channel
     stream_arbiter #(
         .DATA_T ( ariane_axi_pkg::m_ar_chan_t ),
         .N_INP  ( 3                     )
@@ -104,7 +92,6 @@ module std_cache_subsystem #(
         .oup_ready_i ( axi_resp_i.ar_ready )
     );
 
-    // AW Channel
     stream_arbiter #(
         .DATA_T ( ariane_axi_pkg::m_aw_chan_t ),
         .N_INP  ( 3                     )
@@ -119,42 +106,36 @@ module std_cache_subsystem #(
         .oup_ready_i ( axi_resp_i.aw_ready )
     );
 
-    // WID has been removed in AXI 4 so we need to keep track which AW request has been accepted
-    // to forward the correct write data.
     always_comb begin
         w_select = 0;
         unique case (axi_req_o.aw.id)
-            4'b1100:                            w_select = 2; // dcache
-            4'b1000, 4'b1001, 4'b1010, 4'b1011: w_select = 1; // bypass
-            default:                            w_select = 0; // icache
+            4'b1100:                            w_select = 2; 
+            4'b1000, 4'b1001, 4'b1010, 4'b1011: w_select = 1; 
+            default:                            w_select = 0; 
         endcase
     end
 
-    // TODO(zarubaf): This causes a cycle delay, might be optimize-able, FALL_THROUGH
-    // option made problems during synthesis (timing loop)
     fifo_v3 #(
       .DATA_WIDTH   ( 2    ),
-      // we can have a maximum of 4 oustanding transactions as each port is blocking
+
       .DEPTH        ( 4    )
     ) i_fifo_w_channel (
       .clk_i      ( clk_i           ),
       .rst_ni     ( rst_ni          ),
       .flush_i    ( 1'b0            ),
       .testmode_i ( 1'b0            ),
-      .full_o     (                 ), // leave open
+      .full_o     (                 ), 
       .empty_o    ( w_fifo_empty    ),
-      .usage_o    (                 ), // leave open
+      .usage_o    (                 ), 
       .data_i     ( w_select        ),
-      // a new transaction was requested and granted
+
       .push_i     ( axi_req_o.aw_valid & axi_resp_i.aw_ready ),
-      // write ID to select the output MUX
+
       .data_o     ( w_select_fifo   ),
-      // transaction has finished
+
       .pop_i      ( axi_req_o.w_valid & axi_resp_i.w_ready & axi_req_o.w.last )
     );
 
-    // icache will never write so select it as default (e.g.: when no arbitration is active)
-    // this is equal to setting it to zero
     assign w_select_arbiter = (w_fifo_empty) ? 0 : w_select_fifo;
 
     stream_mux #(
@@ -170,11 +151,6 @@ module std_cache_subsystem #(
         .oup_ready_i ( axi_resp_i.w_ready )
     );
 
-    // Route responses based on ID
-    // 0000            -> I$
-    // 10[00|10|01|11] -> Bypass
-    // 1100            -> D$
-    // R Channel
     assign axi_resp_icache.r = axi_resp_i.r;
     assign axi_resp_bypass.r = axi_resp_i.r;
     assign axi_resp_data.r   = axi_resp_i.r;
@@ -184,9 +160,9 @@ module std_cache_subsystem #(
     always_comb begin
         r_select = 0;
         unique case (axi_resp_i.r.id)
-            4'b1100:                            r_select = 0; // dcache
-            4'b1000, 4'b1001, 4'b1010, 4'b1011: r_select = 1; // bypass
-            4'b0000:                            r_select = 2; // icache
+            4'b1100:                            r_select = 0; 
+            4'b1000, 4'b1001, 4'b1010, 4'b1011: r_select = 1; 
+            4'b0000:                            r_select = 2; 
             default:                            r_select = 0;
         endcase
     end
@@ -201,7 +177,6 @@ module std_cache_subsystem #(
         .oup_ready_i ( {axi_req_icache.r_ready, axi_req_bypass.r_ready, axi_req_data.r_ready} )
     );
 
-    // B Channel
     logic [1:0] b_select;
 
     assign axi_resp_icache.b = axi_resp_i.b;
@@ -211,9 +186,9 @@ module std_cache_subsystem #(
     always_comb begin
         b_select = 0;
         unique case (axi_resp_i.b.id)
-            4'b1100:                            b_select = 0; // dcache
-            4'b1000, 4'b1001, 4'b1010, 4'b1011: b_select = 1; // bypass
-            4'b0000:                            b_select = 2; // icache
+            4'b1100:                            b_select = 0; 
+            4'b1000, 4'b1001, 4'b1010, 4'b1011: b_select = 1; 
+            4'b0000:                            b_select = 2; 
             default:                            b_select = 0;
         endcase
     end
@@ -228,8 +203,4 @@ module std_cache_subsystem #(
         .oup_ready_i ( {axi_req_icache.b_ready, axi_req_bypass.b_ready, axi_req_data.b_ready} )
     );
 
-///////////////////////////////////////////////////////
-// assertions
-///////////////////////////////////////////////////////
-
-endmodule // std_cache_subsystem
+endmodule 

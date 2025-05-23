@@ -1,6 +1,4 @@
-import ariane_pkg::*;
-
-module lsu_bypass (
+import ariane_pkg::*;module lsu_bypass (
     input logic clk_i,
     input logic rst_ni,
     input logic flush_i,
@@ -33,7 +31,7 @@ module lsu_bypass (
     read_pointer = read_pointer_q;
 
     mem_n = mem_q;
-    // we've got a valid LSU request
+
     if (lus_req_valid_i) begin
       mem_n[write_pointer_q] = lsu_req_i;
       write_pointer++;
@@ -41,14 +39,14 @@ module lsu_bypass (
     end
 
     if (pop_ld_i) begin
-      // invalidate the result
+
       mem_n[read_pointer_q].valid = 1'b0;
       read_pointer++;
       status_cnt--;
     end
 
     if (pop_st_i) begin
-      // invalidate the result
+
       mem_n[read_pointer_q].valid = 1'b0;
       read_pointer++;
       status_cnt--;
@@ -62,13 +60,12 @@ module lsu_bypass (
       read_pointer = '0;
       foreach (mem_n[i]) mem_n[i] = lsu_ctrl_t'('0);
     end
-    // default assignments
+
     read_pointer_n  = read_pointer;
     write_pointer_n = write_pointer;
     status_cnt_n    = status_cnt;
   end
 
-  // output assignment
   always_comb begin : output_assignments
     if (empty) begin
       lsu_ctrl_o = lsu_req_i;
@@ -77,7 +74,6 @@ module lsu_bypass (
     end
   end
 
-  // registers
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (~rst_ni) begin
       foreach (mem_q[i]) mem_q[i] <= lsu_ctrl_t'('0);

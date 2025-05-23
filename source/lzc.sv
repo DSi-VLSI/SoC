@@ -1,11 +1,11 @@
 module lzc #(
-  /// The width of the input vector.
+
   parameter int unsigned WIDTH = 2,
   parameter int unsigned MODE  = 0
 ) (
   input  logic [WIDTH-1:0]         in_i,
   output logic [$clog2(WIDTH)-1:0] cnt_o,
-  output logic                     empty_o // asserted if all bits in in_i are zero
+  output logic                     empty_o 
 );
 
   localparam int NUM_LEVELS = $clog2(WIDTH);
@@ -20,7 +20,6 @@ module lzc #(
 
   logic [WIDTH-1:0] in_tmp;
 
-  // reverse vector if required
   assign in_tmp = MODE ? {<<{in_i}} : in_i;
 
   for (genvar j = 0; j < WIDTH; j++) begin : g_index_lut
@@ -30,18 +29,18 @@ module lzc #(
   for (genvar level = 0; level < NUM_LEVELS; level++) begin : g_levels
     if (level == NUM_LEVELS-1) begin : g_last_level
       for (genvar k = 0; k < 2**level; k++) begin : g_level
-        // if two successive indices are still in the vector...
+
         if (k * 2 < WIDTH-1) begin
           assign sel_nodes[2**level-1+k]   = in_tmp[k*2] | in_tmp[k*2+1];
           assign index_nodes[2**level-1+k] = (in_tmp[k*2] == 1'b1) ? index_lut[k*2] :
                                                                      index_lut[k*2+1];
         end
-        // if only the first index is still in the vector...
+
         if (k * 2 == WIDTH-1) begin
           assign sel_nodes[2**level-1+k]   = in_tmp[k*2];
           assign index_nodes[2**level-1+k] = index_lut[k*2];
         end
-        // if index is out of range
+
         if (k * 2 > WIDTH-1) begin
           assign sel_nodes[2**level-1+k]   = 1'b0;
           assign index_nodes[2**level-1+k] = '0;

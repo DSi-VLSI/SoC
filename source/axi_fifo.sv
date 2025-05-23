@@ -1,27 +1,29 @@
 module axi_fifo #(
-    parameter int unsigned Depth       = 32'd1,
-    parameter bit          FallThrough = 1'b0,
+    parameter int unsigned Depth       = 32'd1,  
+    parameter bit          FallThrough = 1'b0,  
+
     parameter type         aw_chan_t   = logic,
     parameter type         w_chan_t    = logic,
     parameter type         b_chan_t    = logic,
     parameter type         ar_chan_t   = logic,
     parameter type         r_chan_t    = logic,
+
     parameter type         axi_req_t   = logic,
     parameter type         axi_resp_t  = logic
 ) (
-    input  logic      clk_i,  // Clock
-    input  logic      rst_ni,  // Asynchronous reset active low
+    input  logic      clk_i,  
+    input  logic      rst_ni,  
     input  logic      test_i,
-    // slave port
+
     input  axi_req_t  slv_req_i,
     output axi_resp_t slv_resp_o,
-    // master port
+
     output axi_req_t  mst_req_o,
     input  axi_resp_t mst_resp_i
 );
 
   if (Depth == '0) begin : gen_no_fifo
-    // degenerate case, connect input to output
+
     assign mst_req_o  = slv_req_i;
     assign slv_resp_o = mst_resp_i;
   end else begin : gen_axi_fifo
@@ -40,7 +42,6 @@ module axi_fifo #(
     assign mst_req_o.r_ready   = ~r_fifo_full;
     assign mst_req_o.b_ready   = ~b_fifo_full;
 
-    // A FiFo for each channel
     fifo_v3 #(
         .dtype(aw_chan_t),
         .DEPTH(Depth),

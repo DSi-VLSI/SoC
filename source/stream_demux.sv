@@ -1,15 +1,16 @@
 module stream_demux #(
-  parameter integer N_OUP = 1,
-  /// Dependent parameters, DO NOT OVERRIDE!
-  localparam integer LOG_N_OUP = $clog2(N_OUP)
+
+  parameter int unsigned N_OUP     = 32'd1,
+
+  parameter int unsigned LOG_N_OUP = (N_OUP > 32'd1) ? unsigned'($clog2(N_OUP)) : 1'b1
 ) (
-  input  logic                  inp_valid_i,
-  output logic                  inp_ready_o,
+  input  logic                 inp_valid_i,
+  output logic                 inp_ready_o,
 
-  input  logic  [LOG_N_OUP-1:0] oup_sel_i,
+  input  logic [LOG_N_OUP-1:0] oup_sel_i,
 
-  output logic  [N_OUP-1:0]     oup_valid_o,
-  input  logic  [N_OUP-1:0]     oup_ready_i
+  output logic [N_OUP-1:0]     oup_valid_o,
+  input  logic [N_OUP-1:0]     oup_ready_i
 );
 
   always_comb begin

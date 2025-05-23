@@ -1,7 +1,7 @@
 module sram #(
     parameter DATA_WIDTH = 64,
     parameter NUM_WORDS  = 1024,
-    parameter OUT_REGS   = 0    // enables output registers in FPGA macro (read lat = 2)
+    parameter OUT_REGS   = 0    
 )(
    input  logic                          clk_i,
    input  logic                          rst_ni,
@@ -20,7 +20,6 @@ logic [DATA_WIDTH_ALIGNED-1:0]  wdata_aligned;
 logic [BE_WIDTH_ALIGNED-1:0]    be_aligned;
 logic [DATA_WIDTH_ALIGNED-1:0]  rdata_aligned;
 
-// align to 64 bits for inferrable macro below
 always_comb begin : p_align
     wdata_aligned                    ='0;
     be_aligned                       ='0;
@@ -33,7 +32,7 @@ end
 genvar k;
 generate
     for (k = 0; k<(DATA_WIDTH+63)/64; k++) begin
-        // unused byte-enable segments (8bits) are culled by the tool
+
         SyncSpRamBeNx64 #(
           .ADDR_WIDTH($clog2(NUM_WORDS)),
           .DATA_DEPTH(NUM_WORDS),

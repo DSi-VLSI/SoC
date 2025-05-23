@@ -1,31 +1,28 @@
-import ariane_pkg::*;
-
-module id_stage (
-    input  logic                  clk_i,     // Clock
-    input  logic                  rst_ni,    // Asynchronous reset active low
+import ariane_pkg::*;module id_stage (
+    input  logic                  clk_i,     
+    input  logic                  rst_ni,    
 
     input  logic                  flush_i,
-    // from IF
+
     input  frontend_fetch_t       fetch_entry_i,
     input  logic                  fetch_entry_valid_i,
-    output logic                  decoded_instr_ack_o, // acknowledge the instruction (fetch entry)
+    output logic                  decoded_instr_ack_o, 
 
-    // to ID
-    output scoreboard_entry_t     issue_entry_o,       // a decoded instruction
-    output logic                  issue_entry_valid_o, // issue entry is valid
-    output logic                  is_ctrl_flow_o,      // the instruction we issue is a ctrl flow instructions
-    input  logic                  issue_instr_ack_i,   // issue stage acknowledged sampling of instructions
-    // from CSR file
-    input  riscv_pkg::priv_lvl_t      priv_lvl_i,          // current privilege level
-    input  riscv_pkg::xs_t            fs_i,                // floating point extension status
-    input  logic [2:0]            frm_i,               // floating-point dynamic rounding mode
+    output scoreboard_entry_t     issue_entry_o,       
+    output logic                  issue_entry_valid_o, 
+    output logic                  is_ctrl_flow_o,      
+    input  logic                  issue_instr_ack_i,   
 
-    input  logic                  debug_mode_i,        // we are in debug mode
+    input  riscv_pkg::priv_lvl_t      priv_lvl_i,          
+    input  riscv_pkg::xs_t            fs_i,                
+    input  logic [2:0]            frm_i,               
+
+    input  logic                  debug_mode_i,        
     input  logic                  tvm_i,
     input  logic                  tw_i,
     input  logic                  tsr_i
 );
-    // register stage
+
     struct packed {
         logic              valid;
         scoreboard_entry_t sbe;
@@ -42,9 +39,6 @@ module id_stage (
     logic                fetch_ack_i;
     logic                fetch_entry_valid;
 
-    // ---------------------------------------------------------
-    // 1. Re-align instructions
-    // ---------------------------------------------------------
     instr_realigner instr_realigner_i (
         .fetch_entry_i           ( fetch_entry_i               ),
         .fetch_entry_valid_i     ( fetch_entry_valid_i         ),
@@ -55,9 +49,7 @@ module id_stage (
         .fetch_ack_i             ( fetch_ack_i                 ),
         .*
     );
-    // ---------------------------------------------------------
-    // 2. Check if they are compressed and expand in case they are
-    // ---------------------------------------------------------
+
     compressed_decoder compressed_decoder_i (
         .instr_i                 ( fetch_entry.instruction     ),
         .instr_o                 ( instruction                 ),
@@ -65,9 +57,7 @@ module id_stage (
         .is_compressed_o         ( is_compressed               )
 
     );
-    // ---------------------------------------------------------
-    // 3. Decode and emit instruction to issue stage
-    // ---------------------------------------------------------
+
     decoder decoder_i (
         .pc_i                    ( fetch_entry.address           ),
         .is_compressed_i         ( is_compressed                 ),
@@ -83,9 +73,6 @@ module id_stage (
         .*
     );
 
-    // ------------------
-    // Pipeline Register
-    // ------------------
     assign issue_entry_o = issue_q.sbe;
     assign issue_entry_valid_o = issue_q.valid;
     assign is_ctrl_flow_o = issue_q.is_ctrl_flow;
@@ -94,25 +81,18 @@ module id_stage (
         issue_n     = issue_q;
         fetch_ack_i = 1'b0;
 
-        // Clear the valid flag if issue has acknowledged the instruction
         if (issue_instr_ack_i)
             issue_n.valid = 1'b0;
 
-        // if we have a space in the register and the fetch is valid, go get it
-        // or the issue stage is currently acknowledging an instruction, which means that we will have space
-        // for a new instruction
         if ((!issue_q.valid || issue_instr_ack_i) && fetch_entry_valid) begin
             fetch_ack_i = 1'b1;
             issue_n = {1'b1, decoded_instruction, is_control_flow_instr};
         end
 
-        // invalidate the pipeline register on a flush
         if (flush_i)
             issue_n.valid = 1'b0;
     end
-    // -------------------------
-    // Registers (ID <-> Issue)
-    // -------------------------
+
     always_ff @(posedge clk_i or negedge rst_ni) begin
         if(~rst_ni) begin
             issue_q <= '0;

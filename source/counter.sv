@@ -4,10 +4,10 @@ module counter #(
 )(
     input  logic             clk_i,
     input  logic             rst_ni,
-    input  logic             clear_i, // synchronous clear
-    input  logic             en_i,    // enable the counter
-    input  logic             load_i,  // load a new value
-    input  logic             down_i,  // downcount, default is up
+    input  logic             clear_i, 
+    input  logic             en_i,    
+    input  logic             load_i,  
+    input  logic             down_i,  
     input  logic [WIDTH-1:0] d_i,
     output logic [WIDTH-1:0] q_o,
     output logic             overflow_o

@@ -1,36 +1,35 @@
 module fifo_v2 #(
-    parameter bit          FALL_THROUGH = 1'b0, // fifo is in fall-through mode
-    parameter int unsigned DATA_WIDTH   = 32,   // default data width if the fifo is of type logic
-    parameter int unsigned DEPTH        = 8,    // depth can be arbitrary from 0 to 2**32
-    parameter int unsigned ALM_EMPTY_TH = 1,    // almost empty threshold (when to assert alm_empty_o)
-    parameter int unsigned ALM_FULL_TH  = 1,    // almost full threshold (when to assert alm_full_o)
+    parameter bit          FALL_THROUGH = 1'b0, 
+    parameter int unsigned DATA_WIDTH   = 32,   
+    parameter int unsigned DEPTH        = 8,    
+    parameter int unsigned ALM_EMPTY_TH = 1,    
+    parameter int unsigned ALM_FULL_TH  = 1,    
     parameter type dtype                = logic [DATA_WIDTH-1:0],
-    // DO NOT OVERWRITE THIS PARAMETER
+
     parameter int unsigned ADDR_DEPTH   = (DEPTH > 1) ? $clog2(DEPTH) : 1
 )(
-    input  logic  clk_i,            // Clock
-    input  logic  rst_ni,           // Asynchronous reset active low
-    input  logic  flush_i,          // flush the queue
-    input  logic  testmode_i,       // test_mode to bypass clock gating
-    // status flags
-    output logic  full_o,           // queue is full
-    output logic  empty_o,          // queue is empty
-    output logic  alm_full_o,       // FIFO fillstate >= the specified threshold
-    output logic  alm_empty_o,      // FIFO fillstate <= the specified threshold
-    // as long as the queue is not full we can push new data
-    input  dtype  data_i,           // data to push into the queue
-    input  logic  push_i,           // data is valid and can be pushed to the queue
-    // as long as the queue is not empty we can pop new elements
-    output dtype  data_o,           // output data
-    input  logic  pop_i             // pop head from queue
+    input  logic  clk_i,            
+    input  logic  rst_ni,           
+    input  logic  flush_i,          
+    input  logic  testmode_i,       
+
+    output logic  full_o,           
+    output logic  empty_o,          
+    output logic  alm_full_o,       
+    output logic  alm_empty_o,      
+
+    input  dtype  data_i,           
+    input  logic  push_i,           
+
+    output dtype  data_o,           
+    input  logic  pop_i             
 );
 
     logic [ADDR_DEPTH-1:0] usage;
 
-    // generate threshold parameters
     if (DEPTH == 0) begin
-        assign alm_full_o  = 1'b0; // that signal does not make any sense in a FIFO of depth 0
-        assign alm_empty_o = 1'b0; // that signal does not make any sense in a FIFO of depth 0
+        assign alm_full_o  = 1'b0; 
+        assign alm_empty_o = 1'b0; 
     end else begin
         assign alm_full_o   = (usage >= ALM_FULL_TH[ADDR_DEPTH-1:0]);
         assign alm_empty_o  = (usage <= ALM_EMPTY_TH[ADDR_DEPTH-1:0]);
@@ -55,4 +54,4 @@ module fifo_v2 #(
         .pop_i
     );
 
-endmodule // fifo_v2
+endmodule 

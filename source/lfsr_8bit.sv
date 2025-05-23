@@ -13,7 +13,6 @@ module lfsr_8bit #(
 
     logic [7:0] shift_d, shift_q;
 
-
     always_comb begin
 
         automatic logic shift_in;
@@ -24,7 +23,6 @@ module lfsr_8bit #(
         if (en_i)
             shift_d = {shift_q[6:0], shift_in};
 
-        // output assignment
         refill_way_oh = 'b0;
         refill_way_oh[shift_q[LOG_WIDTH-1:0]] = 1'b1;
         refill_way_bin = shift_q;

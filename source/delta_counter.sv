@@ -4,10 +4,10 @@ module delta_counter #(
 ) (
     input  logic             clk_i,
     input  logic             rst_ni,
-    input  logic             clear_i,    // synchronous clear
-    input  logic             en_i,       // enable the counter
-    input  logic             load_i,     // load a new value
-    input  logic             down_i,     // downcount, default is up
+    input  logic             clear_i,    
+    input  logic             en_i,       
+    input  logic             load_i,     
+    input  logic             down_i,     
     input  logic [WIDTH-1:0] delta_i,
     input  logic [WIDTH-1:0] d_i,
     output logic [WIDTH-1:0] q_o,
@@ -39,7 +39,7 @@ module delta_counter #(
     end
     assign overflow_o = overflow_q;
   end else begin : gen_transient_overflow
-    // counter overflowed if the MSB is set
+
     assign overflow_o = counter_q[WIDTH];
   end
   assign q_o = counter_q[WIDTH-1:0];
