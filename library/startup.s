@@ -222,7 +222,7 @@
 
 .align 4
 .globl tohost
-tohost: .dword 0xFFFFFFFFFFFFFFFF
+tohost: .dword 0
 
 .align 4
 .globl putchar_stdout
