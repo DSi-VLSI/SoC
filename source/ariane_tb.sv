@@ -51,8 +51,8 @@ module ariane_tb;
   );
 
   axi_ram #(
-      .MEM_BASE(4096),
-      .MEM_SIZE(20),
+      .MEM_BASE(0),
+      .MEM_SIZE(32),
       .req_t   (ariane_axi_pkg::m_req_t),
       .resp_t  (ariane_axi_pkg::m_resp_t)
   ) u_axi_ram (

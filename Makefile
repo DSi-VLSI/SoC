@@ -127,7 +127,8 @@ test: build
 	@if [ ! -f tests/$(TEST) ]; then echo -e "\033[1;31mtests/$(TEST) does not exist\033[0m"; exit 1; fi
 	@$(eval TEST_TYPE := $(shell echo "$(TEST)" | sed "s/.*\.//g"))
 	@if [ "$(TEST_TYPE)" = "c" ]; then TEST_ARGS="library/startup.s"; else TEST_ARGS=""; fi; \
-		$(RV64G_GCC) -o build/prog.elf tests/$(TEST) $$TEST_ARGS -Ilibrary -Tlibrary/ariane_tb.ld
+		$(RV64G_GCC) -o build/prog.elf tests/$(TEST) $$TEST_ARGS -Ilibrary
+#		$(RV64G_GCC) -o build/prog.elf tests/$(TEST) $$TEST_ARGS -Ilibrary -Tlibrary/ariane_tb.ld
 	@riscv64-unknown-elf-objcopy -O verilog build/prog.elf build/prog.hex
 	@riscv64-unknown-elf-nm build/prog.elf > build/prog.sym
 	@riscv64-unknown-elf-objdump -d build/prog.elf > build/prog.dump
