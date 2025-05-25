@@ -30,6 +30,8 @@ echo -e "\033[1;32mDone!\033[0m ($time_diff seconds)"
 # SIMULATE
 ################################################################################
 
+ci_simulate clk_div_tb default
+
 ci_simulate ariane_tb add.s
 ci_simulate ariane_tb addi.s
 ci_simulate ariane_tb and.s
