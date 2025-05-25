@@ -88,7 +88,14 @@ define compile
 endef
 
 build/build_$(TOP): source/$(TOP).sv build
-ifeq ($(wildcard build/build_$(TOP)),)
+	@if [ ! -f build/build_$(TOP) ]; then \
+		make -s DUT_BUILD TOP=$(TOP); \
+	else \
+		echo -e "\033[3;35m$(TOP) build already exists. Skipping build.\033[0m"; \
+	fi
+
+.PHONY: DUT_BUILD
+DUT_BUILD:
 	@make -s clean
 	@echo -e "\033[3;35mCompiling...\033[0m"
 	@$(eval COMPILE_LIB := $(FLIST))
@@ -98,9 +105,6 @@ ifeq ($(wildcard build/build_$(TOP)),)
 	@cd build; xelab $(TOP) --O0 --incr --nolog --timescale 1ns/1ps --debug wave | $(GREP_EW)
 	@echo -e "\033[3;35mElaborated $(TOP)\033[0m"
 	@echo "" > build/build_$(TOP)
-else
-	@echo -e "\033[3;35m$(TOP) build already exists. Skipping build.\033[0m"
-endif
 
 .PHONY: simulate
 simulate: build/build_$(TOP)

@@ -20,7 +20,7 @@ module clk_div #(
       counter_n = '0;
     end else begin
       counter_n = counter_q + 1;
-      if (counter_n >= div_i) begin
+      if (counter_n == div_i) begin
         counter_n = '0;
       end
     end
