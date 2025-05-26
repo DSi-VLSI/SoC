@@ -64,15 +64,17 @@ module clk_div_tb;
     apply_reset();
     start_clock(TP);
 
-    @(posedge clk_i);
+    @(posedge clk_o);
 
     repeat (50) begin
       div_i <= $urandom;
-      repeat (50) @(clk_o);
+      repeat (50) @(clk_i);
     end
 
     if (test_passed) $display("\033[1;32m************** TEST PASSED **************\033[0m");
     else $display("\033[1;31m************** TEST FAILED **************\033[0m");
+
+    #100ns;
 
     $finish;
 

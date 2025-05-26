@@ -13,7 +13,6 @@ module clk_div #(
   logic                 clk_no;
 
   always_comb toggle_en = (counter_q == '0);
-  always_comb clk_no = ~clk_o;
 
   always_comb begin
     if (div_i == '0) begin
@@ -26,24 +25,22 @@ module clk_div #(
     end
   end
 
-  ddr_reg #(
-      .DATA_WIDTH(DIV_WIDTH)
-  ) u_reg (
-      .clk_i,
-      .arst_ni,
-      .en_i('1),
-      .data_in_i(counter_n),
-      .data_out_o(counter_q)
-  );
+  always @(clk_i or negedge arst_ni) begin
+    if (~arst_ni) begin
+      counter_q <= '0;
+    end else begin
+      counter_q <= counter_n;
+    end
+  end
 
-  ddr_reg #(
-      .DATA_WIDTH(1)
-  ) clk_src (
-      .clk_i,
-      .arst_ni,
-      .en_i(toggle_en),
-      .data_in_i(clk_no),
-      .data_out_o(clk_o)
-  );
+  always @(clk_i or negedge arst_ni) begin
+    if (~arst_ni) begin
+      clk_o <= '0;
+    end else begin
+      if (toggle_en) begin
+        clk_o <= ~clk_o;
+      end
+    end
+  end
 
 endmodule
