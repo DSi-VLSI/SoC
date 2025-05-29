@@ -118,12 +118,12 @@ simulate_gui: build/build_$(TOP)
 
 .PHONY: print_logo
 print_logo:
-	@echo " ____   ___   ____ ";
-	@echo "/ ___| / _ \ / ___|";
-	@echo "\___ \| | | | |    ";
-	@echo " ___) | |_| | |___ ";
-	@echo "|____/ \___/ \____|";
-	@echo "                   ";
+	@echo "                            ____   ___   ____                            ";
+	@echo "                           / ___| / _ \ / ___|                           ";
+	@echo "                           \___ \| | | | |                               ";
+	@echo "                            ___) | |_| | |___                            ";
+	@echo "                           |____/ \___/ \____|                           ";
+	@echo "                                                                         ";
 
 # Define the GCC command for RISC-V
 RV64G_GCC := riscv64-unknown-elf-gcc -march=rv64g -nostdlib -nostartfiles
