@@ -79,32 +79,30 @@ clean_full: clean
 	@make -s log
 	@echo -e "\033[3;35mCleaned log directory\033[0m"
 
-# Define compile function: compiles the source files in chunks
-define compile
-  $(eval SUB_LIB := $(shell echo "$(wordlist 1, 25,$(COMPILE_LIB))"))
-  cd build; xvlog -i ${ROOT_DIR}/include -sv $(SUB_LIB) --nolog $(XVLOG_DEFS) | $(GREP_EW)
-  $(eval COMPILE_LIB := $(wordlist 26, $(words $(COMPILE_LIB)), $(COMPILE_LIB)))
-  $(if $(COMPILE_LIB), $(call compile))
-endef
-
 build/build_$(TOP): source/$(TOP).sv build
 	@if [ ! -f build/build_$(TOP) ]; then \
 		make -s DUT_BUILD TOP=$(TOP); \
 	else \
-		echo -e "\033[3;35m$(TOP) build already exists. Skipping build.\033[0m"; \
+		make -s match_sha TOP=$(TOP); \
 	fi
+
+.PHONY: match_sha
+match_sha:
+	@sha256sum.exe $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)_new
+	@diff build/build_$(TOP)_new build/build_$(TOP) || make -s DUT_BUILD TOP=$(TOP)
 
 .PHONY: DUT_BUILD
 DUT_BUILD:
 	@make -s clean
 	@echo -e "\033[3;35mCompiling...\033[0m"
-	@$(eval COMPILE_LIB := $(FLIST))
-	@$(call compile)
+	@echo "-i ${ROOT_DIR}/include" > build/flist
+	@$(foreach file, $(FLIST), echo -e $(file) >> build/flist;)
+	@cd build; xvlog -sv -f flist --nolog $(XVLOG_DEFS) | $(GREP_EW)
 	@echo -e "\033[3;35mCompiled\033[0m"
 	@echo -e "\033[3;35mElaborating $(TOP)...\033[0m"
 	@cd build; xelab $(TOP) --O0 --incr --nolog --timescale 1ns/1ps --debug wave | $(GREP_EW)
 	@echo -e "\033[3;35mElaborated $(TOP)\033[0m"
-	@echo "" > build/build_$(TOP)
+	@sha256sum.exe $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)
 
 .PHONY: simulate
 simulate: build/build_$(TOP)
@@ -120,7 +118,12 @@ simulate_gui: build/build_$(TOP)
 
 .PHONY: print_logo
 print_logo:
-	@echo ""
+	@echo " ____   ___   ____ ";
+	@echo "/ ___| / _ \ / ___|";
+	@echo "\___ \| | | | |    ";
+	@echo " ___) | |_| | |___ ";
+	@echo "|____/ \___/ \____|";
+	@echo "                   ";
 
 # Define the GCC command for RISC-V
 RV64G_GCC := riscv64-unknown-elf-gcc -march=rv64g -nostdlib -nostartfiles
