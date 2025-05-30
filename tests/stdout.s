@@ -1,19 +1,19 @@
 .include "startup.s"
 
+.data
+    hello_string: .asciz "Hello World!\n"
+
 main:
     la t0, putchar_stdout
-    
-    li t1, 0x41  # ASCII 'A'
-    li t2, 0x42  # ASCII 'B'
-    li t3, 0x43  # ASCII 'C'
-    li t4, 0x0A  # ASCII '\n'
+    la a0, hello_string
 
-    sb t1, 0(t0)  # Write 'A' to stdout
-    sb t2, 0(t0)  # Write 'B' to stdout
-    sb t3, 0(t0)  # Write 'C' to stdout
-    sb t4, 0(t0)  # Write newline to stdout
+print_loop:
+    lb t1, 0(a0)
+    beqz t1, end_program
+    sb t1, 0(t0)
+    addi a0, a0, 1
+    j print_loop
 
-    li a0, 0  # Success: exit code 0
-
+end_program:
+    li a0, 0
     ret
-
