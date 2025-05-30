@@ -19,21 +19,20 @@ GREP_EW := grep -E "WARNING:|ERROR:|" --color=auto
 
 TEST?=default
 
+TEST_REPO := tests
+
 ####################################################################################################
-# FILE LISTS
+# PACKAGE LISTS
 ####################################################################################################
 
-# package
-FLIST += ${ROOT_DIR}/package/dm_pkg.sv
-FLIST += ${ROOT_DIR}/package/riscv_pkg.sv
-FLIST += ${ROOT_DIR}/package/ariane_pkg.sv
-FLIST += ${ROOT_DIR}/package/axi_pkg.sv
-FLIST += ${ROOT_DIR}/package/ariane_axi_pkg.sv
-FLIST += ${ROOT_DIR}/package/std_cache_pkg.sv
-FLIST += ${ROOT_DIR}/package/cf_math_pkg.sv
-FLIST += ${ROOT_DIR}/package/soc_pkg.sv
-
-FLIST += $(shell find ${ROOT_DIR}/source/ -type f -name "*.sv")
+PACKAGE_LIST += ${ROOT_DIR}/package/dm_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/riscv_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/ariane_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/axi_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/ariane_axi_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/std_cache_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/cf_math_pkg.sv
+PACKAGE_LIST += ${ROOT_DIR}/package/soc_pkg.sv
 
 ####################################################################################################
 # TARGETS
@@ -81,47 +80,49 @@ clean_full: clean
 
 build/build_$(TOP): source/$(TOP).sv build
 	@if [ ! -f build/build_$(TOP) ]; then \
-		make -s DUT_BUILD TOP=$(TOP); \
+		make -s ENV_BUILD TOP=$(TOP); \
 	else \
 		make -s match_sha TOP=$(TOP); \
 	fi
 
 .PHONY: match_sha
 match_sha:
-	@sha256sum.exe $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)_new
-	@diff build/build_$(TOP)_new build/build_$(TOP) || make -s DUT_BUILD TOP=$(TOP)
+	@sha256sum.exe $$(find include/ -type f) $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)_new
+	@diff build/build_$(TOP)_new build/build_$(TOP) || make -s ENV_BUILD TOP=$(TOP)
 
-.PHONY: DUT_BUILD
-DUT_BUILD:
+.PHONY: ENV_BUILD
+ENV_BUILD:
 	@make -s clean
 	@echo -e "\033[3;35mCompiling...\033[0m"
 	@echo "-i ${ROOT_DIR}/include" > build/flist
-	@$(foreach file, $(FLIST), echo -e $(file) >> build/flist;)
+	@$(foreach file, $(PACKAGE_LIST), echo -e $(file) >> build/flist;)
+	@find ${ROOT_DIR}/source -type f >> build/flist
 	@cd build; xvlog -sv -f flist --nolog $(XVLOG_DEFS) | $(GREP_EW)
 	@echo -e "\033[3;35mCompiled\033[0m"
 	@echo -e "\033[3;35mElaborating $(TOP)...\033[0m"
 	@cd build; xelab $(TOP) --O0 --incr --nolog --timescale 1ns/1ps --debug wave | $(GREP_EW)
 	@echo -e "\033[3;35mElaborated $(TOP)\033[0m"
-	@sha256sum.exe $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)
+	@sha256sum.exe $$(find include/ -type f) $$(find package/ -type f) $$(find source/ -type f) > build/build_$(TOP)
+
+.PHONY: common_sim_checks
+common_sim_checks:
+	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
+	@echo "--testplusarg TEST=$(TEST)" > build/xsim_args
 
 .PHONY: simulate
-simulate: build/build_$(TOP)
-	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
-	@echo "--testplusarg TEST=$(TEST)" > build/xsim_args
-	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(TOP)_$(TEST).txt
+simulate: build/build_$(TOP) common_sim_checks
+	@$(eval log_file_name := $(shell echo "$(TOP)_$(TEST).txt" | sed "s/\//___/g"))
+	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(log_file_name).txt
 
 .PHONY: simulate_gui
-simulate_gui: build/build_$(TOP)
-	@if [ "$(TOP)" = "ariane_tb" ]; then make -s test; fi
-	@echo "--testplusarg TEST=$(TEST)" > build/xsim_args
+simulate_gui: build/build_$(TOP) common_sim_checks
 	@cd build; xsim $(TOP) -f xsim_args -gui
 
 .PHONY: print_logo
 print_logo:
 	@echo "                            ____   ___   ____                            ";
 	@echo "                           / ___| / _ \ / ___|                           ";
-	@echo "                           \___ \| | | | |                               ";
-	@echo "                            ___) | |_| | |___                            ";
+	@echo "                           \___ \| | | | |___                            ";
 	@echo "                           |____/ \___/ \____|                           ";
 	@echo "                                                                         ";
 
@@ -131,10 +132,10 @@ RV64G_GCC := riscv64-unknown-elf-gcc -march=rv64g -nostdlib -nostartfiles
 .PHONY: test
 test: build
 	@if [ -z ${TEST} ]; then echo -e "\033[1;31mTEST is not set\033[0m"; exit 1; fi
-	@if [ ! -f tests/$(TEST) ]; then echo -e "\033[1;31mtests/$(TEST) does not exist\033[0m"; exit 1; fi
+	@if [ ! -f ${TEST_REPO}/$(TEST) ]; then echo -e "\033[1;31m${TEST_REPO}/$(TEST) does not exist\033[0m"; exit 1; fi
 	@$(eval TEST_TYPE := $(shell echo "$(TEST)" | sed "s/.*\.//g"))
-	@if [ "$(TEST_TYPE)" = "c" ]; then TEST_ARGS="library/startup.s"; else TEST_ARGS=""; fi; \
-		$(RV64G_GCC) -o build/prog.elf tests/$(TEST) $$TEST_ARGS -Ilibrary -Tlibrary/ariane_tb.ld
+	@if [ "$(TEST_TYPE)" = "c" ]; then TEST_ARGS="${TEST_REPO}/library/startup.s"; else TEST_ARGS=""; fi; \
+		$(RV64G_GCC) -o build/prog.elf ${TEST_REPO}/$(TEST) $$TEST_ARGS -I ${TEST_REPO}/library -T linkers/ariane_tb.ld
 	@riscv64-unknown-elf-objcopy -O verilog build/prog.elf build/prog.hex
 	@riscv64-unknown-elf-nm build/prog.elf > build/prog.sym
 	@riscv64-unknown-elf-objdump -d build/prog.elf > build/prog.dump

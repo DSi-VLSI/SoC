@@ -1,14 +1,14 @@
 .section .data
 
-.align 12
+.align 3
 .globl tohost
 tohost: .dword 0
 
-.align 12
+.align 3
 .globl putchar_stdout
 putchar_stdout: .dword 0
 
-.align 12
+.align 3
 .section .text
 .globl _start
 _start:

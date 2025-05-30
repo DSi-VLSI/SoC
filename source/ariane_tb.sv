@@ -143,6 +143,15 @@ module ariane_tb;
     join_none
   endtask
 
+  function automatic bit [63:0] get_gpr(input [4:0] index);
+    return ariane_tb.u_core.issue_stage_i.i_issue_read_operands.i_ariane_regfile.mem[index];
+  endfunction
+
+  function automatic void set_gpr(input [4:0] index, input bit [63:0] data);
+    if (index != 0)
+      ariane_tb.u_core.issue_stage_i.i_issue_read_operands.i_ariane_regfile.mem[index] = data;
+  endfunction
+
   // Task to wait for the test to exit and check the exit code
   task static wait_exit();
     longint exit_code;
@@ -154,6 +163,21 @@ module ariane_tb;
       end
     end
     $display("\033[0;35mEXIT CODE      : 0x%08x\033[0m", exit_code);
+
+    for (int i = 0; i < 32; i++) begin
+      string GPR_CHK;
+      string GPR_VAL;
+      $sformat(GPR_CHK, "GPR%02d_CHECK", i);
+      $sformat(GPR_VAL, "GPR%02d_VALUE", i);
+      if (u_axi_ram.read_mem_d(sym[GPR_CHK])) begin
+        if (u_axi_ram.read_mem_d(sym[GPR_VAL]) != get_gpr(i)) begin
+          exit_code = 1;
+          $display("\033[1;31mGPR%02d EXP:0x%16h GOT:0x%16h\033[0m", i, u_axi_ram.read_mem_d(
+                   sym[GPR_VAL]), get_gpr(i));
+        end
+      end
+    end
+
     if (exit_code == 0) $display("\033[1;32m************** TEST PASSED **************\033[0m");
     else $display("\033[1;31m************** TEST FAILED **************\033[0m");
   endtask

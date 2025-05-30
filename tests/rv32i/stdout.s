@@ -1,8 +1,9 @@
 .include "startup.s"
 
-.data
-    hello_string: .asciz "Hello World!\n"
+.section .rodata
+hello_string: .asciz "Hello World!\n"
 
+.section .text
 main:
     la t0, putchar_stdout
     la a0, hello_string
