@@ -67,6 +67,7 @@ GPR30_VALUE: .dword 0
 GPR31_CHECK: .dword 0
 GPR31_VALUE: .dword 0
 
+.section .text
 main:
     j pass
 

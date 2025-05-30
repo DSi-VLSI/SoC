@@ -122,7 +122,7 @@ simulate_gui: build/build_$(TOP) common_sim_checks
 print_logo:
 	@echo "                            ____   ___   ____                            ";
 	@echo "                           / ___| / _ \ / ___|                           ";
-	@echo "                           \___ \| | | | |___                            ";
+	@echo "                           \___ \| |_| | |___                            ";
 	@echo "                           |____/ \___/ \____|                           ";
 	@echo "                                                                         ";
 
