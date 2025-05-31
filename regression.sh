@@ -33,6 +33,7 @@ echo -e "\033[1;32mDone!\033[0m ($time_diff seconds)"
 ci_simulate clk_div_tb default
 
 ci_simulate ariane_tb generic/gpr.s
+ci_simulate ariane_tb generic/stdout.s
 
 ci_simulate ariane_tb rv32i/addi.s
 
