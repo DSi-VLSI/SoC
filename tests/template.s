@@ -13,7 +13,7 @@ _start:
 .align 3
 _exit:
     la t0, tohost
-    sd a0, 0(t0)
+    sw a0, 0(t0)
 
 .section .text
 .align 3
