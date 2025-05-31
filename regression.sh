@@ -36,6 +36,9 @@ ci_simulate ariane_tb generic/gpr.s
 ci_simulate ariane_tb generic/stdout.s
 
 ci_simulate ariane_tb rv32i/addi.s
+ci_simulate ariane_tb rv32i/sb.s
+ci_simulate ariane_tb rv32i/sh.s
+ci_simulate ariane_tb rv32i/sw.s
 
 ci_simulate soc default # REMOVE LATER
 

@@ -5,6 +5,7 @@ tohost: .dword 0
 
 .section .text
 .align 3
+.globl _start
 _start:
     call main
 

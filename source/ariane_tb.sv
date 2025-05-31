@@ -159,7 +159,7 @@ module ariane_tb;
     // CHECK EXIT CODE
     forever begin
       @(posedge clk);
-      if (u_axi_ram.addr_out == sym["tohost"] && u_axi_ram.mem_strb == '1 && u_axi_ram.mem_we == '1 && u_axi_ram.mem_req == '1) begin
+      if (u_axi_ram.addr_out == sym["tohost"] && u_axi_ram.mem_we == '1 && u_axi_ram.mem_req == '1) begin
         exit_code = u_axi_ram.mem_wdata;
         break;
       end

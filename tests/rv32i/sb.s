@@ -24,24 +24,25 @@ MEM15_FINAL_VALUE: .byte  7
 
 .section .data
 .align 3
-MEM00_WRITE_VALUE: .byte 0
-MEM01_WRITE_VALUE: .byte 0
-MEM02_WRITE_VALUE: .byte 0
-MEM03_WRITE_VALUE: .byte 0
-MEM04_WRITE_VALUE: .byte 0
-MEM05_WRITE_VALUE: .byte 0
-MEM06_WRITE_VALUE: .byte 0
-MEM07_WRITE_VALUE: .byte 0
-MEM08_WRITE_VALUE: .byte 0
-MEM09_WRITE_VALUE: .byte 0
-MEM10_WRITE_VALUE: .byte 0
-MEM11_WRITE_VALUE: .byte 0
-MEM12_WRITE_VALUE: .byte 0
-MEM13_WRITE_VALUE: .byte 0
-MEM14_WRITE_VALUE: .byte 0
-MEM15_WRITE_VALUE: .byte 0
+MEM00_WRITE_VALUE: .byte 0xAA
+MEM01_WRITE_VALUE: .byte 0xAA
+MEM02_WRITE_VALUE: .byte 0xAA
+MEM03_WRITE_VALUE: .byte 0xAA
+MEM04_WRITE_VALUE: .byte 0xAA
+MEM05_WRITE_VALUE: .byte 0xAA
+MEM06_WRITE_VALUE: .byte 0xAA
+MEM07_WRITE_VALUE: .byte 0xAA
+MEM08_WRITE_VALUE: .byte 0xAA
+MEM09_WRITE_VALUE: .byte 0xAA
+MEM10_WRITE_VALUE: .byte 0xAA
+MEM11_WRITE_VALUE: .byte 0xAA
+MEM12_WRITE_VALUE: .byte 0xAA
+MEM13_WRITE_VALUE: .byte 0xAA
+MEM14_WRITE_VALUE: .byte 0xAA
+MEM15_WRITE_VALUE: .byte 0xAA
 
 .section .text
+.globl _start
 _start:
     la t0, MEM08_WRITE_VALUE
 
@@ -96,7 +97,7 @@ _start:
     li a0, 0
 
     la t0, tohost
-    sd a0, 0(t0)
+    sw a0, 0(t0)
 
 _forever_loop:
     j _forever_loop

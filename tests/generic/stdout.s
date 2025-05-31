@@ -10,17 +10,26 @@ putchar_stdout: .dword 0
 
 .section .text
 .align 3
+.globl _start
 _start:
-    call main
+    la t0, putchar_stdout
+    la a0, hello_string
+    la a1, MEM00_WRITE_VALUE
 
-.section .text
-.align 3
-_exit:
+print_loop:
+    lb t1, 0(a0)
+    sb t1, 0(t0)
+    sb t1, 0(a1)
+    addi a0, a0, 1
+    addi a1, a1, 1
+    beqz t1, end_program
+    j print_loop
+
+end_program:
+    li a0, 0
     la t0, tohost
-    sd a0, 0(t0)
+    sw a0, 0(t0)
 
-.section .text
-.align 3
 _forever_loop:
     j _forever_loop
 
@@ -60,22 +69,3 @@ MEM10_WRITE_VALUE: .byte 0
 MEM11_WRITE_VALUE: .byte 0
 MEM12_WRITE_VALUE: .byte 0
 MEM13_WRITE_VALUE: .byte 0
-
-.section .text
-main:
-    la t0, putchar_stdout
-    la a0, hello_string
-    la a1, MEM00_WRITE_VALUE
-
-print_loop:
-    lb t1, 0(a0)
-    sb t1, 0(t0)
-    sb t1, 0(a1)
-    addi a0, a0, 1
-    addi a1, a1, 1
-    beqz t1, end_program
-    j print_loop
-
-end_program:
-    li a0, 0
-    ret

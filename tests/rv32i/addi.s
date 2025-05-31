@@ -5,17 +5,20 @@ tohost: .dword 0
 
 .section .text
 .align 3
+.globl _start
 _start:
-    call main
+    addi zero,  zero,   1
+    addi   t1,  zero,  -1
+    addi   t2,    t1,   2
+    addi   t3,  zero,   132
+    addi   t4,  zero,  -133
+    addi   t5,    t4,   134
+    addi   t6,  zero,   1232
+    addi   a0,  zero,   0
 
-.section .text
-.align 3
-_exit:
     la t0, tohost
-    sd a0, 0(t0)
+    sw a0, 0(t0)
 
-.section .text
-.align 3
 _forever_loop:
     j _forever_loop
 
@@ -28,15 +31,3 @@ GPR28_FINAL_VALUE: .dword 132
 GPR29_FINAL_VALUE: .dword -133
 GPR30_FINAL_VALUE: .dword 1
 GPR31_FINAL_VALUE: .dword 1232
-
-.section .text
-main:
-    addi zero,  zero,   1
-    addi   t1,  zero,  -1
-    addi   t2,    t1,   2
-    addi   t3,  zero,   132
-    addi   t4,  zero,  -133
-    addi   t5,    t4,   134
-    addi   t6,  zero,   1232
-    addi   a0,  zero,   0
-    ret

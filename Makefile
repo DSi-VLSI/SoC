@@ -69,6 +69,7 @@ clean:
 	@echo -e "\033[3;35mCleaning build directory...\033[0m"
 	@rm -rf build
 	@make -s build
+	@rm -f temp_ci_issues
 	@echo -e "\033[3;35mCleaned build directory\033[0m"
 
 .PHONY: clean_full
