@@ -152,9 +152,11 @@ module ariane_tb;
       ariane_tb.u_core.issue_stage_i.i_issue_read_operands.i_ariane_regfile.mem[index] = data;
   endfunction
 
-  // Task to wait for the test to exit and check the exit code
+  // Task to wait for the test to exit
   task static wait_exit();
     longint exit_code;
+
+    // CHECK EXIT CODE
     forever begin
       @(posedge clk);
       if (u_axi_ram.addr_out == sym["tohost"] && u_axi_ram.mem_strb == '1 && u_axi_ram.mem_we == '1 && u_axi_ram.mem_req == '1) begin
@@ -164,16 +166,42 @@ module ariane_tb;
     end
     $display("\033[0;35mEXIT CODE      : 0x%08x\033[0m", exit_code);
 
+    // CHECK GPR FINAL VALUE
     for (int i = 0; i < 32; i++) begin
-      string GPR_CHK;
-      string GPR_VAL;
-      $sformat(GPR_CHK, "GPR%02d_CHECK", i);
-      $sformat(GPR_VAL, "GPR%02d_VALUE", i);
-      if (u_axi_ram.read_mem_d(sym[GPR_CHK])) begin
-        if (u_axi_ram.read_mem_d(sym[GPR_VAL]) != get_gpr(i)) begin
+      string GPRXX_FINAL_VALUE;
+      $sformat(GPRXX_FINAL_VALUE, "GPR%02d_FINAL_VALUE", i);
+      if (sym.exists(GPRXX_FINAL_VALUE)) begin
+        if (u_axi_ram.read_mem_d(sym[GPRXX_FINAL_VALUE]) != get_gpr(i)) begin
           exit_code = 1;
-          $display("\033[1;31mGPR%02d EXP:0x%16h GOT:0x%16h\033[0m", i, u_axi_ram.read_mem_d(
-                   sym[GPR_VAL]), get_gpr(i));
+          $display("\033[1;31mGPR%02d EXP:0x%016h GOT:0x%016h\033[0m", i, u_axi_ram.read_mem_d(
+                   sym[GPRXX_FINAL_VALUE]), get_gpr(i));
+        end
+      end
+    end
+
+    // CHECK MEMORY FINAL VALUE
+    for (int i = 0; i < 32; i++) begin
+      string MEMXX_FINAL_VALUE;
+      string MEMXX_WRITE_VALUE;
+      $sformat(MEMXX_FINAL_VALUE, "MEM%02d_FINAL_VALUE", i);
+      $sformat(MEMXX_WRITE_VALUE, "MEM%02d_WRITE_VALUE", i);
+      if (sym.exists(MEMXX_FINAL_VALUE) || sym.exists(MEMXX_WRITE_VALUE)) begin
+        if (!sym.exists(MEMXX_FINAL_VALUE)) begin
+          exit_code = 1;
+          $display("\033[1;31mMEM%02d_FINAL_VALUE symbol not found!\033[0m", i);
+        end
+        if (!sym.exists(MEMXX_WRITE_VALUE)) begin
+          exit_code = 1;
+          $display("\033[1;31mMEM%02d_WRITE_VALUE symbol not found!\033[0m", i);
+        end
+        if (u_axi_ram.read_mem_b(
+                sym[MEMXX_FINAL_VALUE]
+            ) != u_axi_ram.read_mem_b(
+                sym[MEMXX_WRITE_VALUE]
+            )) begin
+          exit_code = 1;
+          $display("\033[1;31mMEM%02d EXP:0x%02h GOT:0x%02h\033[0m", i, u_axi_ram.read_mem_b(
+                   sym[MEMXX_FINAL_VALUE]), u_axi_ram.read_mem_b(sym[MEMXX_WRITE_VALUE]));
         end
       end
     end
