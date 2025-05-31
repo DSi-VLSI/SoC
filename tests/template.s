@@ -1,16 +1,8 @@
-# MUST KEEP
 .section .data
 .align 3
 .globl tohost
 tohost: .dword 0
 
-# MUST KEEP
-.section .data
-.align 3
-.globl putchar_stdout
-putchar_stdout: .dword 0
-
-# MUST KEEP
 .section .text
 .align 3
 _start:
@@ -136,13 +128,16 @@ MEM31_WRITE_VALUE: .byte 0
 main:
     j pass
 
+.section .text
 pass:
     addi a0, zero, 0
     j exit
 
+.section .text
 fail:
     addi a0, zero, 1
     j exit
 
+.section .text
 exit:
     ret

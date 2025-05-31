@@ -228,14 +228,25 @@ module ariane_tb;
     load_symbols("prog.sym");
 
     // Set boot address to the start of the program
-    boot_addr <= sym["_start"];
+    if (sym.exists("putchar_stdout")) begin
+      $display("\033[0;35mBOOTADDR       : 0x%08x\033[0m", sym["_start"]);
+      boot_addr <= sym["_start"];
+    end else begin
+      $fatal(1, "\033[1;31m_start symbol not found!\033[0m");
+    end
 
-    $display("\033[0;35mBOOTADDR       : 0x%08x\033[0m", sym["_start"]);
-    $display("\033[0;35mTOHOSTADDR     : 0x%08x\033[0m", sym["tohost"]);
-    $display("\033[0;35mPUTCHAR_STDOUT : 0x%08x\033[0m", sym["putchar_stdout"]);
+    // Set tohost monitoring for the program
+    if (sym.exists("putchar_stdout")) begin
+      $display("\033[0;35mTOHOSTADDR     : 0x%08x\033[0m", sym["tohost"]);
+    end else begin
+      $fatal(1, "\033[1;31mtohost symbol not found!\033[0m");
+    end
 
     // Monitor STDOUT prints
-    monitor_prints();
+    if (sym.exists("putchar_stdout")) begin
+      $display("\033[0;35mPUTCHAR_STDOUT : 0x%08x\033[0m", sym["putchar_stdout"]);
+      monitor_prints();
+    end
 
     // Apply reset and start clock
     apply_reset();
