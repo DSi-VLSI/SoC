@@ -112,7 +112,7 @@ common_sim_checks:
 .PHONY: simulate
 simulate: build/build_$(TOP) common_sim_checks
 	@$(eval log_file_name := $(shell echo "$(TOP)_$(TEST).txt" | sed "s/\//___/g"))
-	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(log_file_name).txt
+	@cd build; xsim $(TOP) -f xsim_args -runall -log ../log/$(log_file_name)
 
 .PHONY: simulate_gui
 simulate_gui: build/build_$(TOP) common_sim_checks
@@ -134,8 +134,7 @@ test: build
 	@if [ -z ${TEST} ]; then echo -e "\033[1;31mTEST is not set\033[0m"; exit 1; fi
 	@if [ ! -f ${TEST_REPO}/$(TEST) ]; then echo -e "\033[1;31m${TEST_REPO}/$(TEST) does not exist\033[0m"; exit 1; fi
 	@$(eval TEST_TYPE := $(shell echo "$(TEST)" | sed "s/.*\.//g"))
-	@if [ "$(TEST_TYPE)" = "c" ]; then TEST_ARGS="${TEST_REPO}/library/startup.s"; else TEST_ARGS=""; fi; \
-		$(RV64G_GCC) -o build/prog.elf ${TEST_REPO}/$(TEST) $$TEST_ARGS -I ${TEST_REPO}/library -T linkers/ariane_tb.ld
+	@$(RV64G_GCC) -o build/prog.elf ${TEST_REPO}/$(TEST) -T linkers/ariane_tb.ld
 	@riscv64-unknown-elf-objcopy -O verilog build/prog.elf build/prog.hex
 	@riscv64-unknown-elf-nm build/prog.elf > build/prog.sym
 	@riscv64-unknown-elf-objdump -d build/prog.elf > build/prog.dump

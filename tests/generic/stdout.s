@@ -1,4 +1,31 @@
-.include "startup.s"
+# MUST KEEP
+.section .data
+.align 3
+.globl tohost
+tohost: .dword 0
+
+# MUST KEEP
+.section .data
+.align 3
+.globl putchar_stdout
+putchar_stdout: .dword 0
+
+# MUST KEEP
+.section .text
+.align 3
+_start:
+    call main
+
+.section .text
+.align 3
+_exit:
+    la t0, tohost
+    sd a0, 0(t0)
+
+.section .text
+.align 3
+_forever_loop:
+    j _forever_loop
 
 .section .rodata
 hello_string: .asciz "Hello World!\n"
