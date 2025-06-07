@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 `include "common_cells/registers.svh"
 
 module fpnew_cast_multi #(
@@ -319,8 +306,6 @@ module fpnew_cast_multi #(
   fpnew_pkg::fp_format_e           dst_fmt_q2;
   fpnew_pkg::int_format_e          int_fmt_q2;
   
-
-
   logic                   [0:NUM_MID_REGS]                    mid_pipe_input_sign_q;
   logic signed            [0:NUM_MID_REGS][INT_EXP_WIDTH-1:0] mid_pipe_input_exp_q;
   logic                   [0:NUM_MID_REGS][INT_MAN_WIDTH-1:0] mid_pipe_input_mant_q;
@@ -421,8 +406,6 @@ module fpnew_cast_multi #(
 
   logic [1:0] fp_round_sticky_bits, int_round_sticky_bits, round_sticky_bits;
   logic       of_before_round, uf_before_round;
-
-
   
   always_comb begin : cast_value
     
@@ -507,8 +490,6 @@ module fpnew_cast_multi #(
 
   logic [WIDTH-1:0] rounded_int_res; 
   logic             rounded_int_res_zero; 
-
-
   
   for (genvar fmt = 0; fmt < int'(NUM_FORMATS); fmt++) begin : gen_res_assemble
     

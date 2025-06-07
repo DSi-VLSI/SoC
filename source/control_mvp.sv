@@ -1,43 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import defs_div_sqrt_mvp::*;
 
 module control_mvp
@@ -57,14 +19,10 @@ module control_mvp
    input logic [C_EXP_FP64:0]                         Exp_num_DI,
    input logic [C_MANT_FP64:0]                        Denominator_DI,
    input logic [C_EXP_FP64:0]                         Exp_den_DI,
-
-
    output logic                                       Div_start_dly_SO ,
    output logic                                       Sqrt_start_dly_SO,
    output logic                                       Div_enable_SO,
    output logic                                       Sqrt_enable_SO,
-
-
    
    output logic                                       Full_precision_SO,
    output logic                                       FP32_SO,
@@ -109,8 +67,6 @@ module control_mvp
          Denominator_se_DB={~Denominator_se_D[C_MANT_FP64+1:C_MANT_FP64-C_MANT_FP16ALT], {(C_MANT_FP64-C_MANT_FP16ALT){1'b0}} };
      end
    end
-
-
    logic [C_MANT_FP64+1:0]                            Mant_D_sqrt_Norm;
 
    assign Mant_D_sqrt_Norm=Exp_num_DI[0]?{1'b0,Numerator_DI}:{Numerator_DI,1'b0}; 
@@ -140,9 +96,6 @@ module control_mvp
    assign FP64_SO = (Format_sel_S==2'b01);
    assign FP16_SO = (Format_sel_S==2'b10);
    assign FP16ALT_SO = (Format_sel_S==2'b11);
-
-
-
    
    
    
@@ -164,9 +117,6 @@ module control_mvp
           end
     end
   assign Full_precision_SO = (Precision_ctl_S==6'h00);
-
-
-
      logic [5:0]                                     State_ctl_S;
      logic [5:0]                                     State_Two_iteration_unit_S;
      logic [5:0]                                     State_Four_iteration_unit_S;
@@ -226,9 +176,6 @@ module control_mvp
                   end
                 endcase
               end
-
-
-
            2'b01:  
              begin
                case(Format_sel_S)
@@ -278,9 +225,6 @@ module control_mvp
                   end
                 endcase
               end
-
-
-
            2'b10:  
              begin
                case(Format_sel_S)
@@ -438,9 +382,6 @@ module control_mvp
                   end
                 endcase
               end
-
-
-
            2'b11:  
              begin
                case(Format_sel_S)
@@ -490,12 +431,8 @@ module control_mvp
                   end
                 endcase
               end
-
-
            endcase
         end
-
-
    
    
    
@@ -576,8 +513,6 @@ module control_mvp
 
    logic                                                        Final_state_S;
    assign     Final_state_S= (Crtl_cnt_S==State_ctl_S);
-
-
    always_ff @(posedge Clk_CI, negedge Rst_RBI) 
      begin
         if (~Rst_RBI)
@@ -597,9 +532,6 @@ module control_mvp
               Crtl_cnt_S    <= '0;
             end
      end 
-
-
-
     always_ff @(posedge Clk_CI, negedge Rst_RBI) 
       begin
         if(~Rst_RBI)
@@ -626,9 +558,6 @@ module control_mvp
             Done_SO<=1'b0;
           end
        end
-
-
-
 
    always_ff @(posedge Clk_CI, negedge Rst_RBI) 
      begin
@@ -657,8 +586,6 @@ module control_mvp
            Ready_SO<=Ready_SO;
          end
      end
-
-
   
    
    
@@ -728,9 +655,6 @@ module control_mvp
   
    
    
-
-
-
   
    
    
@@ -766,8 +690,6 @@ module control_mvp
   
    
    
-
-
   
    
    
@@ -795,8 +717,6 @@ module control_mvp
   
    
    
-
-
   
    
    
@@ -819,20 +739,13 @@ module control_mvp
   
    
    
-
-
-
    logic [C_MANT_FP64+1+4:0]                                      Sqrt_R0,Sqrt_Q0,Q_sqrt0,Q_sqrt_com_0;
    logic [C_MANT_FP64+1+4:0]                                      Sqrt_R1,Sqrt_Q1,Q_sqrt1,Q_sqrt_com_1;
    logic [C_MANT_FP64+1+4:0]                                      Sqrt_R2,Sqrt_Q2,Q_sqrt2,Q_sqrt_com_2;
    logic [C_MANT_FP64+1+4:0]                                      Sqrt_R3,Sqrt_Q3,Q_sqrt3,Q_sqrt_com_3,Sqrt_R4; 
-
-
    logic [1:0]                                                    Sqrt_DI  [3:0];
    logic [1:0]                                                    Sqrt_DO  [3:0];
    logic                                                          Sqrt_carry_DO;
-
-
   logic  [C_MANT_FP64+1+4:0]                                      Iteration_cell_a_D [3:0];
   logic  [C_MANT_FP64+1+4:0]                                      Iteration_cell_b_D [3:0];
   logic  [C_MANT_FP64+1+4:0]                                      Iteration_cell_a_BMASK_D [3:0];
@@ -840,11 +753,7 @@ module control_mvp
   logic                                                           Iteration_cell_carry_D [3:0];
   logic  [C_MANT_FP64+1+4:0]                                      Iteration_cell_sum_D [3:0];
   logic  [C_MANT_FP64+1+4:0]                                      Iteration_cell_sum_AMASK_D [3:0];
-
-
   logic [3:0]                                                     Sqrt_quotinent_S;
-
-
    always_comb
     begin  
       case (Format_sel_S)
@@ -882,9 +791,6 @@ module control_mvp
           end
         endcase
     end
-
-
-
   assign  Qcnt_one_0=    {1'b0};  
   assign  Qcnt_one_1=    {Quotient_DP[0]};
   assign  Qcnt_one_2=    {Quotient_DP[1:0]};
@@ -943,8 +849,6 @@ module control_mvp
   assign  Qcnt_one_55=    {Quotient_DP[54:0]};
   assign  Qcnt_one_56=    {Quotient_DP[55:0]};
   assign  Qcnt_one_57=    {Quotient_DP[56:0]};
-
-
   assign  Qcnt_two_0 =    {1'b0,            Sqrt_quotinent_S[3]};  
   assign  Qcnt_two_1 =    {Quotient_DP[1:0],Sqrt_quotinent_S[3]};
   assign  Qcnt_two_2 =    {Quotient_DP[3:0],Sqrt_quotinent_S[3]};
@@ -974,8 +878,6 @@ module control_mvp
   assign  Qcnt_two_26 =    {Quotient_DP[51:0],Sqrt_quotinent_S[3]};
   assign  Qcnt_two_27 =    {Quotient_DP[53:0],Sqrt_quotinent_S[3]};
   assign  Qcnt_two_28 =    {Quotient_DP[55:0],Sqrt_quotinent_S[3]};
-
-
   assign  Qcnt_three_0 =    {1'b0,            Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};  
   assign  Qcnt_three_1 =    {Quotient_DP[2:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};
   assign  Qcnt_three_2 =    {Quotient_DP[5:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};
@@ -996,8 +898,6 @@ module control_mvp
   assign  Qcnt_three_17 =    {Quotient_DP[50:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};
   assign  Qcnt_three_18 =    {Quotient_DP[53:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};
   assign  Qcnt_three_19 =    {Quotient_DP[56:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2]};
-
-
   assign      Qcnt_four_0 =    {1'b0,            Sqrt_quotinent_S[3],Sqrt_quotinent_S[2],Sqrt_quotinent_S[1]};
   assign      Qcnt_four_1 =    {Quotient_DP[3:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2],Sqrt_quotinent_S[1]};
   assign      Qcnt_four_2 =    {Quotient_DP[7:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2],Sqrt_quotinent_S[1]};
@@ -1014,9 +914,6 @@ module control_mvp
   assign      Qcnt_four_13 =    {Quotient_DP[51:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2],Sqrt_quotinent_S[1]};
   assign      Qcnt_four_14 =    {Quotient_DP[55:0],Sqrt_quotinent_S[3],Sqrt_quotinent_S[2],Sqrt_quotinent_S[1]};
 
-
-
-
   always_comb begin  
 
   case(Iteration_unit_num_S)
@@ -1026,9 +923,6 @@ module control_mvp
   
    
    
-
-
-
 
         case(Crtl_cnt_S)
 
@@ -1383,13 +1277,9 @@ module control_mvp
             end
         endcase
       end
-
-
    
    
    
-
-
     2'b01:
       begin
    
@@ -1703,8 +1593,6 @@ module control_mvp
    
    
    
-
-
     2'b10:
       begin
    
@@ -1977,8 +1865,6 @@ module control_mvp
    
    
    
-
-
     2'b11:
       begin
    
@@ -2233,9 +2119,6 @@ module control_mvp
    
    
  end
-
-
-
   assign Sqrt_R0= ((Sqrt_start_dly_S)?'0:{Partial_remainder_DP[C_MANT_FP64+5:0]});
   assign Sqrt_R1= {Iteration_cell_sum_AMASK_D[0][C_MANT_FP64+5],Iteration_cell_sum_AMASK_D[0][C_MANT_FP64+2:0],Sqrt_DO[0]} ;
   assign Sqrt_R2= {Iteration_cell_sum_AMASK_D[1][C_MANT_FP64+5],Iteration_cell_sum_AMASK_D[1][C_MANT_FP64+2:0],Sqrt_DO[1]};
@@ -2251,8 +2134,6 @@ module control_mvp
   
   logic [C_MANT_FP64+5:0]                           First_iteration_cell_div_a_D,First_iteration_cell_div_b_D;
   logic                                             Sel_b_for_first_S;
-
-
   assign First_iteration_cell_div_a_D=(Div_start_dly_S)?{Numerator_se_D[C_MANT_FP64+1:C_MANT_FP64-C_MANT_FP16ALT],{FP16ALT_SO?FP16ALT_SO:Numerator_se_D[C_MANT_FP64-C_MANT_FP16ALT-1]},
                                                          Numerator_se_D[C_MANT_FP64-C_MANT_FP16ALT-2:C_MANT_FP64-C_MANT_FP16],{FP16_SO?FP16_SO:Numerator_se_D[C_MANT_FP64-C_MANT_FP16-1]},
                                                          Numerator_se_D[C_MANT_FP64-C_MANT_FP16-2:C_MANT_FP64-C_MANT_FP32],{FP32_SO?FP32_SO:Numerator_se_D[C_MANT_FP64-C_MANT_FP32-1]},
@@ -2265,9 +2146,6 @@ module control_mvp
   assign First_iteration_cell_div_b_D=Sel_b_for_first_S?Denominator_se_format_DB:{Denominator_se_D,4'b0};
   assign Iteration_cell_a_BMASK_D[0]=Sqrt_enable_SO?Sqrt_R0:{First_iteration_cell_div_a_D};
   assign Iteration_cell_b_BMASK_D[0]=Sqrt_enable_SO?Sqrt_Q0:{First_iteration_cell_div_b_D};
-
-
-
   
   logic [C_MANT_FP64+5:0]                          Sec_iteration_cell_div_a_D,Sec_iteration_cell_div_b_D;
   logic                                            Sel_b_for_sec_S;
@@ -2323,8 +2201,6 @@ module control_mvp
    
    
    
-
-
   logic [C_MANT_FP64+1+4:0]                          Mask_bits_ctl_S;  
 
   assign Mask_bits_ctl_S =58'h3ff_ffff_ffff_ffff;   
@@ -2332,8 +2208,6 @@ module control_mvp
    
    
    
-
-
   logic                                             Div_enable_SI   [3:0];
   logic                                             Div_start_dly_SI   [3:0];
   logic                                             Sqrt_enable_SI   [3:0];
@@ -2366,9 +2240,6 @@ module control_mvp
         end
 
   endgenerate
-
-
-
   always_comb
     begin
       case (Iteration_unit_num_S)
@@ -2402,9 +2273,6 @@ module control_mvp
           end
         endcase
      end
-
-
-
    always_ff @(posedge Clk_CI, negedge Rst_RBI)   
      begin
         if(~Rst_RBI)
@@ -2462,14 +2330,9 @@ module control_mvp
         else
           Quotient_DP <= Quotient_DN;
     end
-
-
    
    
    
-
-
-
    generate
      if(Iteration_unit_num_S==2'b00)
        begin
@@ -2808,9 +2671,6 @@ module control_mvp
           end
         end
       endgenerate
-
-
-
    generate
      if(Iteration_unit_num_S==2'b01)
        begin
@@ -3024,9 +2884,6 @@ module control_mvp
           end
        end
      endgenerate
-
-
-
    generate
      if(Iteration_unit_num_S==2'b10)
        begin
@@ -3193,9 +3050,6 @@ module control_mvp
           end
         end
       endgenerate
-
-
-
    generate
      if(Iteration_unit_num_S==2'b11)
        begin
@@ -3347,12 +3201,6 @@ module control_mvp
         end
       endgenerate
 
-
-
-
-
-
-
    logic   [C_EXP_FP64+1:0]    Exp_result_prenorm_DN,Exp_result_prenorm_DP;
 
    logic   [C_EXP_FP64+1:0]                                Exp_add_a_D;
@@ -3385,17 +3233,10 @@ module control_mvp
           end
         endcase
     end
-
-
-
-
-
   assign Exp_add_a_D = {Sqrt_start_dly_S?{Exp_num_DI[C_EXP_FP64],Exp_num_DI[C_EXP_FP64],Exp_num_DI[C_EXP_FP64],Exp_num_DI[C_EXP_FP64:1]}:{Exp_num_DI[C_EXP_FP64],Exp_num_DI[C_EXP_FP64],Exp_num_DI}};
   assign Exp_add_b_D = {Sqrt_start_dly_S?{1'b0,{C_EXP_ZERO_FP64},Exp_num_DI[0]}:{~Exp_den_DI[C_EXP_FP64],~Exp_den_DI[C_EXP_FP64],~Exp_den_DI}};
   assign Exp_add_c_D = {Div_start_dly_S?{{C_BIAS_AONE}}:{{C_HALF_BIAS}}};
   assign Exp_result_prenorm_DN  = (Start_dly_S)?{Exp_add_a_D + Exp_add_b_D + Exp_add_c_D}:Exp_result_prenorm_DP;
-
-
   always_ff @(posedge Clk_CI, negedge Rst_RBI)
    begin
       if(~Rst_RBI)

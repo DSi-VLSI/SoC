@@ -1,37 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import defs_div_sqrt_mvp::*;
 
 module div_sqrt_top_mvp
@@ -60,11 +28,6 @@ module div_sqrt_top_mvp
    output logic                           Ready_SO,
    output logic                           Done_SO
  );
-
-
-
-
-
    
    logic [C_EXP_FP64:0]                 Exp_a_D;
    logic [C_EXP_FP64:0]                 Exp_b_D;
@@ -92,8 +55,6 @@ module div_sqrt_top_mvp
    logic FP64_S;
    logic FP16_S;
    logic FP16ALT_S;
-
-
  preprocess_mvp  preprocess_U0
  (
    .Clk_CI                (Clk_CI             ),
@@ -151,8 +112,6 @@ module div_sqrt_top_mvp
    .Exp_z_DO              (Exp_z_D            ),
    .Mant_z_DO             (Mant_z_D           )
     );
-
-
  norm_div_sqrt_mvp  fpu_norm_U0
   (
    .Mant_in_DI            (Mant_z_D           ),

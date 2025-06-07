@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 `include "common_cells/registers.svh"
 
 module fpnew_fma #(

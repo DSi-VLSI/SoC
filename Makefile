@@ -101,7 +101,6 @@ ENV_BUILD:
 	@echo "-i ${ROOT_DIR}/include" > build/flist
 	@$(foreach file, $(PACKAGE_LIST), echo -e $(file) >> build/flist;)
 	@find ${ROOT_DIR}/source -type f >> build/flist
-	@find ${ROOT_DIR}/src -type f >> build/flist
 	@cd build; xvlog -sv -f flist --nolog $(XVLOG_DEFS) | $(GREP_EW)
 	@echo -e "\033[3;35mCompiled\033[0m"
 	@echo -e "\033[3;35mElaborating $(TOP)...\033[0m"

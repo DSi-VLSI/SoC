@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 module fpnew_rounding #(
   parameter int unsigned AbsWidth=2 
 ) (

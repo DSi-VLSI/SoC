@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 `include "common_cells/registers.svh"
 
 module fpnew_opgroup_multifmt_slice #(
@@ -84,8 +71,6 @@ module fpnew_opgroup_multifmt_slice #(
   logic [NUM_FORMATS-1:0][Width-1:0]     fmt_slice_result;
   logic [NUM_INT_FORMATS-1:0][Width-1:0] ifmt_slice_result;
   logic [Width-1:0]                      conv_slice_result;
-
-
   logic [Width-1:0] conv_target_d, conv_target_q; 
 
   fpnew_pkg::status_t [NUM_LANES-1:0]   lane_status;

@@ -1,36 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import defs_div_sqrt_mvp::*;
 
 module nrbd_nrsc_mvp
@@ -64,11 +32,7 @@ module nrbd_nrsc_mvp
    output logic  [C_MANT_FP64+4:0]             Mant_z_DO,
    output logic [C_EXP_FP64+1:0]               Exp_z_DO
     );
-
-
     logic                                     Div_start_dly_S,Sqrt_start_dly_S;
-
-
 control_mvp         control_U0
 (  .Clk_CI                                   (Clk_CI                          ),
    .Rst_RBI                                  (Rst_RBI                         ),
@@ -98,7 +62,4 @@ control_mvp         control_U0
    .Mant_result_prenorm_DO                   (Mant_z_DO                       ),
    .Exp_result_prenorm_DO                    (Exp_z_DO                        )
 );
-
-
-
 endmodule

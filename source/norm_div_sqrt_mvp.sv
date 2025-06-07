@@ -1,46 +1,4 @@
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import defs_div_sqrt_mvp::*;
 
 module norm_div_sqrt_mvp
@@ -67,8 +25,6 @@ module norm_div_sqrt_mvp
    output logic [C_EXP_FP64+C_MANT_FP64:0]      Result_DO,
    output logic [4:0]                           Fflags_SO 
    );
-
-
    logic                                        Sign_res_D;
 
    logic                                        NV_OP_S;
@@ -397,9 +353,6 @@ module norm_div_sqrt_mvp
 
    assign Mant_rounded_S = (|(Mant_lower_D))| Mant_sticky_bit_D;
 
-
-
-
    always_comb 
      begin
         Mant_roundUp_S = 1'b0;
@@ -421,8 +374,6 @@ module norm_div_sqrt_mvp
   logic  [C_MANT_FP64:0]                Mant_roundUp_Vector_S; 
 
   assign Mant_roundUp_Vector_S={7'h0,(FP16ALT_SI&&Mant_roundUp_S),2'h0,(FP16_SI&&Mant_roundUp_S),12'h0,(FP32_SI&&Mant_roundUp_S),28'h0,(FP64_SI&&Mant_roundUp_S)};
-
-
   assign Mant_upperRounded_D = Mant_upper_D + Mant_roundUp_Vector_S;
   assign Mant_renorm_S       = Mant_upperRounded_D[C_MANT_FP64+1];
 
@@ -431,8 +382,6 @@ module norm_div_sqrt_mvp
   
   logic [C_MANT_FP64-1:0]               Mant_res_round_D;
   logic [C_EXP_FP64-1:0]                Exp_res_round_D;
-
-
   assign Mant_res_round_D = (Mant_renorm_S)?Mant_upperRounded_D[C_MANT_FP64:1]:Mant_upperRounded_D[C_MANT_FP64-1:0]; 
   assign Exp_res_round_D  = Exp_res_norm_D+Mant_renorm_S;
 

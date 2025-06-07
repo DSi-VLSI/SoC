@@ -1,37 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import defs_div_sqrt_mvp::*;
 
 module preprocess_mvp
@@ -126,8 +94,6 @@ module preprocess_mvp
              end
            endcase
        end
-
-
    assign Mant_a_D = {Hb_a_D,Mant_a_NonH_D};
    assign Mant_b_D = {Hb_b_D,Mant_b_NonH_D};
 
@@ -135,9 +101,6 @@ module preprocess_mvp
    assign Hb_b_D = | Exp_b_D; 
 
    assign Start_S= Div_start_SI | Sqrt_start_SI;
-
-
-
    
    
    
@@ -197,9 +160,6 @@ module preprocess_mvp
            endcase
        end
 
-
-
-
    logic               Zero_a_SN,Zero_a_SP;
    logic               Zero_b_SN,Zero_b_SP;
    logic               Inf_a_SN,Inf_a_SP;
@@ -245,8 +205,6 @@ module preprocess_mvp
    
 
    assign Special_case_SBO=(~{(Div_start_SI)?(Zero_a_SN | Zero_b_SN |  Inf_a_SN | Inf_b_SN | NaN_a_SN | NaN_b_SN): (Zero_a_SN | Inf_a_SN | NaN_a_SN | Sign_a_D) })&&(Start_S&&Ready_SI);
-
-
    always_ff @(posedge Clk_CI, negedge Rst_RBI)
      begin
        if(~Rst_RBI)
@@ -371,8 +329,6 @@ module preprocess_mvp
     .cnt_o   ( Mant_leadingOne_b ),
     .empty_o ( Mant_zero_S_b     )
   );
-
-
    logic [C_MANT_FP64:0]            Mant_b_norm_DN,Mant_b_norm_DP;
 
    assign  Mant_b_norm_DN = ((Start_S&&Ready_SI))?(Mant_b_D<<(Mant_leadingOne_b)):Mant_b_norm_DP;

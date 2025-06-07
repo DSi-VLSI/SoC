@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 module fpnew_opgroup_block #(
   parameter fpnew_pkg::opgroup_e        OpGroup       = fpnew_pkg::ADDMUL,
   

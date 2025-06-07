@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 module fpnew_opgroup_fmt_slice #(
   parameter fpnew_pkg::opgroup_e     OpGroup       = fpnew_pkg::ADDMUL,
   parameter fpnew_pkg::fp_format_e   FpFormat      = fpnew_pkg::fp_format_e'(0),
@@ -57,8 +44,6 @@ module fpnew_opgroup_fmt_slice #(
 
   localparam int unsigned FP_WIDTH  = fpnew_pkg::fp_width(FpFormat);
   localparam int unsigned SIMD_WIDTH = unsigned'(Width/NUM_LANES);
-
-
   logic [NUM_LANES-1:0] lane_in_ready, lane_out_valid; 
   logic                 vectorial_op;
 
@@ -278,8 +263,6 @@ module fpnew_opgroup_fmt_slice #(
   assign tag_o                                        = lane_tags[0];    
   assign busy_o                                       = (| lane_busy);
   assign out_valid_o                                  = lane_out_valid[0]; 
-
-
   
   always_comb begin : output_processing
     

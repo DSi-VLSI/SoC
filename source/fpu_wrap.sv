@@ -1,18 +1,5 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 module fpu_wrap
   import ariane_pkg::*;
 #(
@@ -634,8 +621,6 @@ module fpu_wrap
         end
       end
     end
-
-
     
     
     
